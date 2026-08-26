@@ -50,6 +50,7 @@ def create_database(database_path: Path, tickers: list[str]) -> None:
         validate_download(downloaded_prices, tickers)
         insert_prices(connection, downloaded_prices, tickers)
         update_ticker_date_ranges(connection)
+        insert_spy_prices(connection, download_spy_prices())
 
 
 def create_tables(connection: sqlite3.Connection) -> None:
@@ -59,6 +60,19 @@ def create_tables(connection: sqlite3.Connection) -> None:
             ticker TEXT PRIMARY KEY,
             first_date TEXT,
             last_date TEXT
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE spy (
+            date TEXT PRIMARY KEY,
+            open REAL,
+            high REAL,
+            low REAL,
+            close REAL,
+            adj_close REAL,
+            volume INTEGER
         )
         """
     )
@@ -88,6 +102,19 @@ def download_prices(tickers: list[str]):
     """
     return yf.download(
         tickers=tickers,
+        start=START_DATE,
+        end=END_DATE,
+        auto_adjust=False,
+        group_by="ticker",
+        progress=False,
+        threads=False,
+    )
+
+
+def download_spy_prices():
+    """Download SPY after the Russell 3000 request has completed."""
+    return yf.download(
+        tickers="SPY",
         start=START_DATE,
         end=END_DATE,
         auto_adjust=False,
@@ -144,6 +171,42 @@ def insert_prices(connection: sqlite3.Connection, downloaded_prices, tickers: li
             """,
             rows,
         )
+
+
+def insert_spy_prices(connection: sqlite3.Connection, downloaded_prices) -> None:
+    """Store SPY separately, so it remains available even though it is not a Russell ticker."""
+    spy_prices = _ticker_frame(downloaded_prices, "SPY").dropna(how="all")
+    if spy_prices.empty:
+        raise RuntimeError("Yahoo Finance returned no SPY prices.")
+
+    rows = [
+        (
+            price_date.strftime("%Y-%m-%d"),
+            nullable_float(values.get("Open")),
+            nullable_float(values.get("High")),
+            nullable_float(values.get("Low")),
+            nullable_float(values.get("Close")),
+            nullable_float(values.get("Adj Close")),
+            nullable_integer(values.get("Volume")),
+        )
+        for price_date, values in spy_prices.iterrows()
+    ]
+    connection.executemany(
+        """
+        INSERT INTO spy (date, open, high, low, close, adj_close, volume)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        rows,
+    )
+
+
+def _ticker_frame(downloaded_prices, ticker: str):
+    """Return one ticker's columns across yfinance's single/multi-ticker shapes."""
+    if not hasattr(downloaded_prices.columns, "levels"):
+        return downloaded_prices
+    if ticker in downloaded_prices.columns.get_level_values(0):
+        return downloaded_prices[ticker]
+    return downloaded_prices.xs(ticker, axis=1, level=1)
 
 
 def nullable_float(value):

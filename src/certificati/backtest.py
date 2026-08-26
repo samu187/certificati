@@ -59,6 +59,7 @@ def run_backtest(
     open_trades: list[dict] = []
     closed_trades: list[dict] = []
     equity = [_equity_point(start, cash, 0, 0)]
+    market_prices: dict[str, list[dict]] = {}
 
     # Do not issue a certificate that cannot reach its longest selected term.
     last_trade_date = end - relativedelta(months=min_maturity_months)
@@ -225,6 +226,7 @@ def run_backtest(
             cash += pay_coupon(trade, today, performance)
             cash += close_trade(trade, today, performance, "End Backtest")
         equity.append(_equity_point(today, cash, 0, 0))
+        market_prices = _market_prices(database, start, end, fixed_tickers)
 
     return _serialise(
         {
@@ -250,6 +252,7 @@ def run_backtest(
             },
             "equity": equity,
             "closed_trades": closed_trades,
+            "market_prices": market_prices,
         }
     )
 
@@ -261,6 +264,42 @@ def _random_basket(date: dt.date, size: int, choose_ticker) -> list[str]:
         if ticker not in selected_tickers:
             selected_tickers.append(ticker)
     return list(selected_tickers)
+
+
+def _market_prices(
+    database: sqlite3.Connection,
+    start: dt.date,
+    end: dt.date,
+    fixed_tickers: list[str] | None,
+) -> dict[str, list[dict]]:
+    """Return benchmark prices, plus the selected custom basket when applicable."""
+    requested_tickers = ["SPY", *(fixed_tickers or [])]
+    price_series: dict[str, list[dict]] = {}
+
+    for ticker in requested_tickers:
+        table = "spy" if ticker == "SPY" else "prices"
+        ticker_filter = "" if ticker == "SPY" else "AND ticker = ?"
+        parameters = [start.isoformat(), end.isoformat()]
+        if ticker != "SPY":
+            parameters.append(ticker)
+        rows = database.execute(
+            f"""
+            SELECT date, close
+            FROM {table}
+            WHERE date >= ? AND date <= ? {ticker_filter}
+            ORDER BY date
+            """,
+            parameters,
+        ).fetchall()
+        if not rows:
+            raise RuntimeError(f"No market prices available for {ticker} in the selected period.")
+        price_series[ticker] = [
+            {"date": price_date, "close": float(close)}
+            for price_date, close in rows
+            if close is not None
+        ]
+
+    return price_series
 
 
 def _least_represented_maturity_month(

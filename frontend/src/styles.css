@@ -56,7 +56,7 @@ body::after {
   align-items: flex-end;
   justify-content: space-between;
   gap: 20px;
-  max-width: 1280px;
+  max-width: 1360px;
   margin: 0 auto 38px;
 }
 
@@ -201,19 +201,34 @@ button { -webkit-tap-highlight-color: transparent; }
 .loadingSkeletons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: min(100%, 560px); margin-top: 40px; }
 .loadingSkeletons span { height: 120px; border-radius: 13px; background: linear-gradient(100deg, rgba(255,255,255,.3), rgba(255,255,255,.72), rgba(255,255,255,.3)); background-size: 180% 100%; animation: shimmer 1.5s infinite linear; }
 
-.resultData { display: block; min-height: 0; padding: clamp(24px, 4vw, 48px); text-align: left; }
+.resultData { width: min(100%, 1360px); margin: 0 auto; text-align: left; }
+.resultCard, .tradesCard { width: 100%; border: 1px solid rgba(255, 255, 255, .68); border-radius: 28px; background: rgba(255, 250, 239, .54); box-shadow: 0 20px 60px rgba(75, 36, 21, .12); backdrop-filter: blur(14px); }
+.chartCard { min-height: 0; padding: clamp(26px, 4vw, 52px); }
 .resultHeading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
 .resultHeading h2 { font-size: clamp(28px, 4vw, 42px); }
 .resultHeading p:not(.eyebrow) { margin: 7px 0 0; color: #647168; font-size: 13px; }
-.chartLegend { display: flex; flex-wrap: wrap; gap: 13px; color: #58645b; font-size: 12px; font-weight: 750; }
-.chartLegend span { display: inline-flex; align-items: center; gap: 6px; }
-.chartLegend i { width: 17px; height: 3px; border-radius: 3px; }
-.equitySwatch, .equityLine { background: #4b2415; stroke: #4b2415; }
-.unrealizedSwatch, .unrealizedLine { background: #287062; stroke: #287062; }
-.equityChart { display: block; width: 100%; overflow: visible; }
-.equityChart line { stroke: rgba(75, 36, 21, .18); }
-.equityChart polyline { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.equityChart text { fill: #6a756c; font-size: 11px; }
+.marketSeriesPicker { min-width: 218px; margin: 0; padding: 12px 14px; border: 1px solid rgba(75, 36, 21, .12); border-radius: 13px; background: rgba(255, 255, 255, .44); }
+.marketSeriesPicker legend { padding: 0; color: #3f4d44; font-size: 11px; font-weight: 850; }
+.marketSeriesPicker p { margin: 3px 0 9px; color: #778077; font-size: 10px; line-height: 1.35; }
+.marketSeriesPicker > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.marketSeriesPicker label { display: inline-flex; align-items: center; gap: 5px; color: #536058; font-size: 11px; font-weight: 800; cursor: pointer; }
+.marketSeriesPicker input { width: 14px; height: 14px; margin: 0; accent-color: #287062; }
+.resultChart { width: 100%; height: min(62vh, 620px); min-height: 430px; padding: 10px 0 6px; }
+.resultChart .recharts-text { fill: #657168; font-size: 11px; }
+.resultChart .recharts-legend-item-text { color: #4f5d54 !important; font-size: 12px; font-weight: 750; }
+.resultChart .recharts-default-tooltip { border: 1px solid rgba(75, 36, 21, .13) !important; border-radius: 10px; background: rgba(255, 253, 247, .96) !important; box-shadow: 0 12px 28px rgba(75, 36, 21, .12); }
+.tradesCard { margin-top: 28px; overflow: hidden; }
+.tradesHeading { display: flex; align-items: center; justify-content: space-between; padding: 19px 21px 17px; border-bottom: 1px solid rgba(75, 36, 21, .1); }
+.tradesHeading .eyebrow { margin-bottom: 5px; }
+.tradesHeading h3 { margin: 0; color: #17201c; font-size: 18px; letter-spacing: -.025em; }
+.tradesTableWrap { max-height: 520px; overflow: auto; }
+.tradesTable { width: 100%; min-width: 960px; border-collapse: collapse; font-size: 12px; }
+.tradesTable th, .tradesTable td { padding: 12px 14px; border-bottom: 1px solid rgba(75, 36, 21, .08); text-align: left; white-space: nowrap; }
+.tradesTable th { position: sticky; top: 0; z-index: 1; background: #fbf5ec; color: #657168; font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
+.tradesTable td:nth-child(5) { max-width: 230px; overflow: hidden; text-overflow: ellipsis; }
+.tradesTable tbody tr:hover { background: rgba(235, 244, 239, .58); }
+.positivePnl { color: #287062; font-weight: 850; }
+.negativePnl { color: #a8442e; font-weight: 850; }
 
 @keyframes loadingPulse { 0%, 100% { opacity: .28; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
 @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
@@ -227,4 +242,6 @@ button { -webkit-tap-highlight-color: transparent; }
   .fieldGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .builderToggle { top: 17px; left: 17px; }
   .resultHeading { align-items: start; flex-direction: column; }
+  .marketSeriesPicker { width: 100%; }
+  .resultChart { height: 410px; min-height: 0; }
 }
