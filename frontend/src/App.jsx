@@ -13,10 +13,29 @@ function SlidersIcon() {
 export function App() {
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
 
-  function runBacktest() {
+  async function runBacktest(request) {
     setIsBuilderOpen(false);
     setIsRunning(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const response = await fetch("/api/backtest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.detail || "The backtest could not be completed.");
+      setResult(payload);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setIsRunning(false);
+    }
   }
 
   return (
@@ -29,7 +48,7 @@ export function App() {
         <p className="headerStatus">Local backtesting workspace</p>
       </header>
 
-      <ResultSurface isRunning={isRunning} />
+      <ResultSurface isRunning={isRunning} result={result} error={error} />
 
       <button
         className={`builderToggle ${isBuilderOpen ? "isHidden" : ""}`}

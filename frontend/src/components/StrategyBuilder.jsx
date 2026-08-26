@@ -1,47 +1,81 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
-const tickerOptions = [
-  ["AAPL", "Apple"],
-  ["MSFT", "Microsoft"],
-  ["NVDA", "NVIDIA"],
-  ["AMZN", "Amazon"],
-  ["META", "Meta Platforms"],
-  ["LLY", "Eli Lilly"],
-];
+const initialSettings = {
+  min_maturity_months: "6",
+  max_maturity_months: "12",
+  barrier: "60",
+  airbag: true,
+  autocall: true,
+  annual_coupon: "20",
+  coupon_trigger: true,
+  coupon_trigger_level: "75",
+  autocall_level_one: "90",
+  autocall_step_down: "5",
+  autocall_floor: "75",
+  start_date: "2016-01-04",
+  end_date: "2026-07-31",
+  target_open_trades: "60",
+  initial_capital: "1000000",
+  risk_free_rate: "5",
+};
 
 function CloseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="m6 6 12 12M18 6 6 18" />
-    </svg>
-  );
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>;
 }
 
 function Section({ number, title, children }) {
-  return (
-    <section className="builderSection">
-      <div className="sectionHeading">
-        <span>{number}</span>
-        <h2>{title}</h2>
-      </div>
-      {children}
-    </section>
-  );
+  return <section className="builderSection"><div className="sectionHeading"><span>{number}</span><h2>{title}</h2></div>{children}</section>;
 }
 
 export function StrategyBuilder({ isOpen, onClose, onRun }) {
+  const [settings, setSettings] = useState(initialSettings);
   const [basketMode, setBasketMode] = useState("random");
   const [basketSize, setBasketSize] = useState(3);
-  const [selectedTickers, setSelectedTickers] = useState(["AAPL", "MSFT", "NVDA"]);
+  const [selectedTickers, setSelectedTickers] = useState([]);
   const [tickerQuery, setTickerQuery] = useState("");
+  const [tickerMatches, setTickerMatches] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [tickerError, setTickerError] = useState("");
+  const [formError, setFormError] = useState("");
 
-  const filteredTickers = useMemo(() => {
-    const query = tickerQuery.trim().toLowerCase();
-    if (!query) return tickerOptions;
-    return tickerOptions.filter(([ticker, name]) =>
-      `${ticker} ${name}`.toLowerCase().includes(query),
-    );
-  }, [tickerQuery]);
+  const minimum = Number(settings.min_maturity_months);
+  const maximum = Number(settings.max_maturity_months);
+  const maturityMonths = Number.isFinite(minimum) && Number.isFinite(maximum) && maximum >= minimum
+    ? Array.from({ length: Math.min(maximum - minimum + 1, 24) }, (_, index) => minimum + index)
+    : [];
+
+  useEffect(() => {
+    if (basketMode !== "custom" || !tickerQuery.trim()) {
+      setTickerMatches([]);
+      setTickerError("");
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setIsSearching(true);
+    setTickerError("");
+    fetch(`/api/tickers?query=${encodeURIComponent(tickerQuery)}&limit=20`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Ticker search is unavailable.");
+        return response.json();
+      })
+      .then((matches) => {
+        setTickerMatches(matches);
+        if (!matches.length) setTickerError(`“${tickerQuery.toUpperCase()}” is not an available ticker.`);
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") setTickerError(error.message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsSearching(false);
+      });
+
+    return () => controller.abort();
+  }, [basketMode, tickerQuery]);
+
+  function setField(name, value) {
+    setSettings((current) => ({ ...current, [name]: value }));
+  }
 
   function toggleTicker(ticker) {
     setSelectedTickers((current) => {
@@ -50,105 +84,84 @@ export function StrategyBuilder({ isOpen, onClose, onRun }) {
     });
   }
 
+  function submit() {
+    if (basketMode === "custom" && !selectedTickers.length) {
+      setFormError("Choose at least one ticker from the search results.");
+      return;
+    }
+    if (!maturityMonths.length) {
+      setFormError("Choose a valid maturity range.");
+      return;
+    }
+
+    setFormError("");
+    onRun({
+      ...settings,
+      min_maturity_months: Number(settings.min_maturity_months),
+      max_maturity_months: Number(settings.max_maturity_months),
+      target_open_trades: Number(settings.target_open_trades),
+      barrier: Number(settings.barrier),
+      annual_coupon: Number(settings.annual_coupon) / 100,
+      coupon_trigger_level: Number(settings.coupon_trigger_level),
+      autocall_level_one: Number(settings.autocall_level_one),
+      autocall_step_down: Number(settings.autocall_step_down),
+      autocall_floor: Number(settings.autocall_floor),
+      initial_capital: Number(settings.initial_capital),
+      risk_free_rate: Number(settings.risk_free_rate) / 100,
+      tickers: basketMode === "custom" ? selectedTickers : null,
+      random_basket_size: basketSize,
+    });
+  }
+
   return (
     <aside className={`strategyBuilder ${isOpen ? "isOpen" : ""}`} aria-hidden={!isOpen}>
-      <div className="builderTopbar">
-        <div>
-          <p className="eyebrow">Strategy builder</p>
-          <h2>Set up a backtest</h2>
-        </div>
-        <button className="iconButton" type="button" onClick={onClose} aria-label="Close strategy builder">
-          <CloseIcon />
-        </button>
-      </div>
-
+      <div className="builderTopbar"><div><p className="eyebrow">Strategy builder</p><h2>Set up a backtest</h2></div><button className="iconButton" type="button" onClick={onClose} aria-label="Close strategy builder"><CloseIcon /></button></div>
       <div className="builderContent">
         <Section number="1" title="Maturity ladder">
-          <p className="fieldHint">
-            New trades use the least represented original term in this monthly range.
-          </p>
+          <p className="fieldHint">New trades use the least represented original term in this monthly range.</p>
           <div className="maturityInputs">
-            <label>
-              From
-              <div className="inputWithUnit"><input defaultValue="6" inputMode="numeric" /><span>months</span></div>
-            </label>
+            <label>From<div className="inputWithUnit"><input value={settings.min_maturity_months} onChange={(event) => setField("min_maturity_months", event.target.value)} inputMode="numeric" /><span>months</span></div></label>
             <span className="inputDivider">to</span>
-            <label>
-              To
-              <div className="inputWithUnit"><input defaultValue="12" inputMode="numeric" /><span>months</span></div>
-            </label>
+            <label>To<div className="inputWithUnit"><input value={settings.max_maturity_months} onChange={(event) => setField("max_maturity_months", event.target.value)} inputMode="numeric" /><span>months</span></div></label>
           </div>
-          <div className="termChips" aria-label="Maturity buckets">
-            {[6, 7, 8, 9, 10, 11, 12].map((month) => <span key={month}>{month} mo</span>)}
-          </div>
+          <div className="termChips" aria-label="Maturity buckets">{maturityMonths.map((month) => <span key={month}>{month} mo</span>)}</div>
         </Section>
-
         <Section number="2" title="Basket">
-          <div className="modeSwitch" role="group" aria-label="Basket mode">
-            <button type="button" className={basketMode === "random" ? "selected" : ""} onClick={() => setBasketMode("random")}>Random</button>
-            <button type="button" className={basketMode === "custom" ? "selected" : ""} onClick={() => setBasketMode("custom")}>Custom</button>
-          </div>
-
-          {basketMode === "random" ? (
-            <div className="basketSizePicker">
-              <span>Underlyings per certificate</span>
-              <div>
-                {[1, 2, 3, 4, 5].map((size) => (
-                  <button key={size} className={basketSize === size ? "selected" : ""} type="button" onClick={() => setBasketSize(size)}>{size}</button>
-                ))}
-              </div>
-            </div>
-          ) : (
+          <div className="modeSwitch" role="group" aria-label="Basket mode"><button type="button" className={basketMode === "random" ? "selected" : ""} onClick={() => setBasketMode("random")}>Random</button><button type="button" className={basketMode === "custom" ? "selected" : ""} onClick={() => setBasketMode("custom")}>Custom</button></div>
+          {basketMode === "random" ? <div className="basketSizePicker"><span>Underlyings per certificate</span><div>{[1, 2, 3, 4, 5].map((size) => <button key={size} className={basketSize === size ? "selected" : ""} type="button" onClick={() => setBasketSize(size)}>{size}</button>)}</div></div> : (
             <div className="tickerPicker">
-              <label>
-                Search available tickers
-                <input value={tickerQuery} onChange={(event) => setTickerQuery(event.target.value)} placeholder="Search by ticker or company" />
-              </label>
-              <p className="fieldHint">Choose between one and five names. This list will use the local ticker database.</p>
-              <div className="tickerOptions">
-                {filteredTickers.map(([ticker, name]) => {
-                  const isSelected = selectedTickers.includes(ticker);
-                  return (
-                    <button key={ticker} type="button" className={isSelected ? "selected" : ""} onClick={() => toggleTicker(ticker)}>
-                      <strong>{ticker}</strong><span>{name}</span><i>{isSelected ? "Selected" : "Add"}</i>
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="selectedTickers" aria-label="Selected tickers">
-                {selectedTickers.map((ticker) => <span key={ticker}>{ticker}</span>)}
-              </div>
+              <label>Search available tickers<input value={tickerQuery} onChange={(event) => setTickerQuery(event.target.value.toUpperCase())} placeholder="Start typing a ticker" autoComplete="off" /></label>
+              <p className="fieldHint">Select one to five existing symbols. Typed text alone is never added to the basket.</p>
+              {isSearching && <p className="tickerMessage">Searching tickers…</p>}
+              {tickerError && <p className="tickerMessage error">{tickerError}</p>}
+              {!!tickerMatches.length && <div className="tickerOptions">{tickerMatches.map(({ ticker, first_date: firstDate, last_date: lastDate }) => {
+                const isSelected = selectedTickers.includes(ticker);
+                return <button key={ticker} type="button" className={isSelected ? "selected" : ""} onClick={() => toggleTicker(ticker)}><strong>{ticker}</strong><span>{firstDate} – {lastDate}</span><i>{isSelected ? "Selected" : "Add"}</i></button>;
+              })}</div>}
+              {!!selectedTickers.length && <div className="selectedTickers" aria-label="Selected tickers">{selectedTickers.map((ticker) => <button key={ticker} type="button" onClick={() => toggleTicker(ticker)}>{ticker} ×</button>)}</div>}
             </div>
           )}
         </Section>
-
-        <Section number="3" title="Certificate terms">
-          <div className="fieldGrid">
-            <label>Barrier (%)<input defaultValue="60" inputMode="decimal" /></label>
-            <label>Airbag<select defaultValue="yes"><option value="yes">Yes</option><option value="no">No</option></select></label>
-            <label>Coupon (% p.a.)<input defaultValue="20" inputMode="decimal" /></label>
-            <label>Coupon trigger (%)<input defaultValue="75" inputMode="decimal" /></label>
-            <label>Autocall first level (%)<input defaultValue="90" inputMode="decimal" /></label>
-            <label>Autocall step-down (%)<input defaultValue="5" inputMode="decimal" /></label>
-            <label>Autocall floor (%)<input defaultValue="75" inputMode="decimal" /></label>
-          </div>
-        </Section>
-
-        <Section number="4" title="Backtest settings">
-          <div className="fieldGrid twoColumns">
-            <label>Start date<input type="date" defaultValue="2016-01-04" /></label>
-            <label>End date<input type="date" defaultValue="2026-07-31" /></label>
-            <label>Target open trades<input defaultValue="60" inputMode="numeric" /></label>
-            <label>Initial capital<input defaultValue="1000000" inputMode="decimal" /></label>
-            <label>Risk-free rate (% p.a.)<input defaultValue="5" inputMode="decimal" /></label>
-          </div>
-        </Section>
+        <Section number="3" title="Certificate terms"><div className="fieldGrid">
+          <label>Barrier (%)<input value={settings.barrier} onChange={(event) => setField("barrier", event.target.value)} inputMode="decimal" /></label>
+          <label>Airbag<select value={String(settings.airbag)} onChange={(event) => setField("airbag", event.target.value === "true")}><option value="true">Yes</option><option value="false">No</option></select></label>
+          <label>Coupon (% p.a.)<input value={settings.annual_coupon} onChange={(event) => setField("annual_coupon", event.target.value)} inputMode="decimal" /></label>
+          <label>Coupon trigger<select value={String(settings.coupon_trigger)} onChange={(event) => setField("coupon_trigger", event.target.value === "true")}><option value="true">Yes</option><option value="false">No</option></select></label>
+          <label>Coupon trigger level (%)<input value={settings.coupon_trigger_level} onChange={(event) => setField("coupon_trigger_level", event.target.value)} inputMode="decimal" /></label>
+          <label>Autocall<select value={String(settings.autocall)} onChange={(event) => setField("autocall", event.target.value === "true")}><option value="true">Yes</option><option value="false">No</option></select></label>
+          <label>Autocall first level (%)<input value={settings.autocall_level_one} onChange={(event) => setField("autocall_level_one", event.target.value)} inputMode="decimal" /></label>
+          <label>Autocall step-down (%)<input value={settings.autocall_step_down} onChange={(event) => setField("autocall_step_down", event.target.value)} inputMode="decimal" /></label>
+          <label>Autocall floor (%)<input value={settings.autocall_floor} onChange={(event) => setField("autocall_floor", event.target.value)} inputMode="decimal" /></label>
+        </div></Section>
+        <Section number="4" title="Backtest settings"><div className="fieldGrid twoColumns">
+          <label>Start date<input type="date" value={settings.start_date} onChange={(event) => setField("start_date", event.target.value)} /></label>
+          <label>End date<input type="date" value={settings.end_date} onChange={(event) => setField("end_date", event.target.value)} /></label>
+          <label>Target open trades<input value={settings.target_open_trades} onChange={(event) => setField("target_open_trades", event.target.value)} inputMode="numeric" /></label>
+          <label>Initial capital<input value={settings.initial_capital} onChange={(event) => setField("initial_capital", event.target.value)} inputMode="decimal" /></label>
+          <label>Risk-free rate (% p.a.)<input value={settings.risk_free_rate} onChange={(event) => setField("risk_free_rate", event.target.value)} inputMode="decimal" /></label>
+        </div></Section>
       </div>
-
-      <div className="builderFooter">
-        <p>{basketMode === "random" ? `Random basket · ${basketSize} names` : `Custom basket · ${selectedTickers.length} names`}</p>
-        <button className="runButton" type="button" onClick={onRun}>Run backtest</button>
-      </div>
+      <div className="builderFooter"><div><p>{basketMode === "random" ? `Random basket · ${basketSize} names` : `Custom basket · ${selectedTickers.length} names`}</p>{formError && <p className="formError">{formError}</p>}</div><button className="runButton" type="button" onClick={submit}>Run backtest</button></div>
     </aside>
   );
 }
