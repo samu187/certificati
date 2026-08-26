@@ -1,0 +1,19 @@
+[project]
+name = "certificati"
+version = "0.1.0"
+description = "A local FastAPI and React app for certificates"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.116.0",
+    "python-dateutil>=2.9",
+    "uvicorn>=0.35.0",
+    "yfinance>=0.2.66",
+]
+
+[project.scripts]
+certificati = "certificati.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
