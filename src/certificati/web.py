@@ -18,6 +18,7 @@ from certificati.backtest import run_backtest
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 ASSETS_DIR = STATIC_DIR / "assets"
+db_path: Path | None = None
 
 
 class BacktestRequest(BaseModel):
@@ -51,7 +52,7 @@ def search_tickers(query: str = "", limit: int = 20):
     limit = max(1, min(limit, 100))
     pattern = f"{query.strip().upper()}%"
 
-    with sqlite3.connect(app.state.database_path) as database:
+    with sqlite3.connect(db_path) as database:
         rows = database.execute(
             """
             SELECT ticker, first_date, last_date
@@ -73,7 +74,7 @@ def search_tickers(query: str = "", limit: int = 20):
 def create_backtest(request: BacktestRequest):
     """Run a backtest and return the complete result in the response."""
     try:
-        return run_backtest(**request.model_dump(), database_path=database_path)
+        return run_backtest(**request.model_dump(), database_path=db_path)
     except (ValueError, RuntimeError, sqlite3.Error) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
@@ -83,9 +84,11 @@ def serve_frontend(path: str):
     return FileResponse(STATIC_DIR / "index.html")
 
 
+
 def run_web(database_path: Path) -> None:
     """Serve the prepared web application and open it in the default browser."""
-    database_path = database_path
+    global db_path
+    db_path = database_path
     host = "127.0.0.1"
     port = 8044
     threading.Timer(1.0, lambda: webbrowser.open(f"http://{host}:{port}")).start()

@@ -19,13 +19,13 @@ app = typer.Typer(
 def default_command(context: typer.Context) -> None:
     if context.invoked_subcommand is None:
         # Launches web app if no command is supplied
-        run_web()
+        run_web(database_path)
 
 
 @app.command()
 def web(context: typer.Context) -> None:
     # Launches local web app
-    run_web()
+    run_web(database_path)
 
 
 @app.command()
@@ -42,10 +42,9 @@ def backtest() -> None:
 
 
 def main() -> None:
-
     try:
-        database_path = check_database(
-            data_dir,
+        check_database(
+            database_path,
             confirm_download=lambda count: typer.confirm(
                 f"Do you want to download historical prices for {count:,} stocks?"
             ),
@@ -53,7 +52,7 @@ def main() -> None:
     except DatabaseDownloadDeclined as error:
         typer.echo(str(error))
         raise typer.Exit() from error
-    app(database_path)
+    app()
 
 
 if __name__ == "__main__":

@@ -20,11 +20,10 @@ class DatabaseDownloadDeclined(Exception):
 
 
 def check_database(
-    data_dir: Path,
+    database_path: Path,
     confirm_download: Callable[[int], bool] | None = None,
 ) -> Path:
     """Create the price database on the first application startup only."""
-    database_path = data_dir / "russell_prices.sqlite"
     if database_path.exists():
         return database_path
 
