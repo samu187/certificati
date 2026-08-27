@@ -32,6 +32,24 @@ function tradeProfit(trade) {
   return tradeCouponTotal(trade) + trade.redemption - trade.quantity;
 }
 
+function EmptyChartIcon() {
+  return (
+    <svg className="emptyChartIcon" viewBox="0 0 160 96" aria-hidden="true">
+      <defs>
+        <linearGradient id="chart-fill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#62a894" stopOpacity="0.28" />
+          <stop offset="1" stopColor="#62a894" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path className="emptyChartGrid" d="M12 76H148M12 52H148M12 28H148" />
+      <path className="emptyChartArea" d="M12 77L34 64L55 69L78 43L98 53L121 24L148 12V77Z" />
+      <path className="emptyChartLine" d="M12 77L34 64L55 69L78 43L98 53L121 24L148 12" />
+      <circle cx="121" cy="24" r="4" />
+      <circle cx="148" cy="12" r="4" />
+    </svg>
+  );
+}
+
 const marketColours = ["#8b5e34", "#6f5aa5", "#bd6b48", "#286b91", "#9c5a78", "#477557"];
 
 function EquityChart({ equity, marketPrices, selectedMarketSeries }) {
@@ -135,5 +153,5 @@ export function ResultSurface({ isRunning, result, error }) {
   if (isRunning) return <section className="resultSurface loadingSurface" aria-live="polite"><div className="loadingMark"><span /><span /><span /></div><p className="eyebrow">Backtest in progress</p><h2>Building your portfolio history</h2><p>Calculating certificate events, redemptions, and daily equity.</p><div className="loadingSkeletons" aria-hidden="true"><span /><span /><span /></div></section>;
   if (error) return <section className="resultSurface emptyResult"><p className="eyebrow">Backtest unavailable</p><h2>Something needs attention.</h2><p>{error}</p></section>;
   if (result) return <section className="resultData"><div className="resultCard chartCard"><div className="resultHeading"><div><p className="eyebrow">Backtest results</p><h2>Portfolio equity</h2><p>{result.config.start_date} – {result.config.end_date} · {result.closed_trades.length} closed trades</p></div><MarketSeriesPicker marketPrices={result.market_prices ?? {}} selectedSeries={selectedMarketSeries} onChange={toggleMarketSeries} /></div><EquityChart equity={result.equity} marketPrices={result.market_prices ?? {}} selectedMarketSeries={selectedMarketSeries} /></div><ClosedTradesTable trades={result.closed_trades} /></section>;
-  return <section className="resultSurface emptyResult" aria-labelledby="result-title"><p className="eyebrow">Backtest results</p><h2 id="result-title">Your strategy, in one place.</h2><p>Open the builder to define the maturity ladder, basket, certificate terms, and portfolio settings.</p><div className="resultPreview" aria-hidden="true"><span /><span /><span /><span /><span /><span /><span /><span /><span /></div></section>;
+  return <section className="resultSurface emptyResult" aria-labelledby="result-title"><div className="emptyChartFrame"><EmptyChartIcon /></div><p className="eyebrow">Ready when you are</p><h2 id="result-title">Your results will take shape here.</h2><p>Set up a strategy, then run a backtest to see portfolio equity, market comparisons, and completed certificates.</p></section>;
 }

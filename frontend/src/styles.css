@@ -103,10 +103,12 @@ button { -webkit-tap-highlight-color: transparent; }
 .resultSurface h2 { max-width: 560px; font-size: clamp(29px, 4.5vw, 52px); line-height: 1; }
 .resultSurface > p:not(.eyebrow) { max-width: 470px; margin: 16px 0 0; color: #5e695f; font-size: 16px; line-height: 1.55; }
 
-.resultPreview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; width: min(100%, 580px); margin-top: 42px; }
-.resultPreview span { height: 55px; border: 1px solid rgba(75, 36, 21, 0.09); border-radius: 12px; background: rgba(255, 255, 255, 0.47); }
-.resultPreview span:nth-child(4) { grid-column: span 2; height: 140px; }
-.resultPreview span:nth-child(7) { grid-column: span 3; height: 82px; }
+.emptyChartFrame { display: grid; width: min(100%, 480px); margin: 4px 0 31px; padding: 24px 22px 16px; border: 1px solid rgba(40, 112, 98, 0.16); border-radius: 20px; background: linear-gradient(145deg, rgba(237, 247, 242, 0.86), rgba(255, 255, 255, 0.38)); box-shadow: inset 0 1px rgba(255, 255, 255, 0.8); }
+.emptyChartIcon { width: 100%; height: auto; overflow: visible; }
+.emptyChartGrid { fill: none; stroke: rgba(75, 36, 21, 0.11); stroke-dasharray: 3 5; }
+.emptyChartArea { fill: url(#chart-fill); }
+.emptyChartLine { fill: none; stroke: #287062; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
+.emptyChartIcon circle { fill: #fffaf1; stroke: #287062; stroke-width: 3; }
 
 .builderToggle {
   position: fixed;

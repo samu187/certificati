@@ -17,6 +17,7 @@ const initialSettings = {
   target_open_trades: "60",
   initial_capital: "1000000",
   risk_free_rate: "5",
+  benchmark: "SPY",
 };
 
 function CloseIcon() {
@@ -82,6 +83,13 @@ export function StrategyBuilder({ isOpen, onClose, onRun }) {
     });
   }
 
+  function selectTicker(ticker) {
+    toggleTicker(ticker);
+    setTickerQuery("");
+    setTickerMatches([]);
+    setTickerError("");
+  }
+
   function submit() {
     if (basketMode === "custom" && !selectedTickers.length) {
       setFormError("Choose at least one ticker from the search results.");
@@ -93,8 +101,9 @@ export function StrategyBuilder({ isOpen, onClose, onRun }) {
     }
 
     setFormError("");
+    const { benchmark, ...backtestSettings } = settings;
     onRun({
-      ...settings,
+      ...backtestSettings,
       min_maturity_months: Number(settings.min_maturity_months),
       max_maturity_months: Number(settings.max_maturity_months),
       target_open_trades: Number(settings.target_open_trades),
@@ -133,7 +142,7 @@ export function StrategyBuilder({ isOpen, onClose, onRun }) {
               {tickerError && <p className="tickerMessage error">{tickerError}</p>}
               {!!tickerMatches.length && <div className="tickerOptions">{tickerMatches.map(({ ticker, first_date: firstDate, last_date: lastDate }) => {
                 const isSelected = selectedTickers.includes(ticker);
-                return <button key={ticker} type="button" className={isSelected ? "selected" : ""} onClick={() => toggleTicker(ticker)}><strong>{ticker}</strong><span>{firstDate} – {lastDate}</span><i>{isSelected ? "Selected" : "Add"}</i></button>;
+                return <button key={ticker} type="button" className={isSelected ? "selected" : ""} onClick={() => selectTicker(ticker)}><strong>{ticker}</strong><span>{firstDate} – {lastDate}</span><i>{isSelected ? "Selected" : "Add"}</i></button>;
               })}</div>}
               {!!selectedTickers.length && <div className="selectedTickers" aria-label="Selected tickers">{selectedTickers.map((ticker) => <button key={ticker} type="button" onClick={() => toggleTicker(ticker)}>{ticker} ×</button>)}</div>}
             </div>
@@ -154,6 +163,7 @@ export function StrategyBuilder({ isOpen, onClose, onRun }) {
           <label>Target open trades<input value={settings.target_open_trades} onChange={(event) => setField("target_open_trades", event.target.value)} inputMode="numeric" /></label>
           <label>Initial capital<input value={settings.initial_capital} onChange={(event) => setField("initial_capital", event.target.value)} inputMode="decimal" /></label>
           <label>Risk-free rate (% p.a.)<input value={settings.risk_free_rate} onChange={(event) => setField("risk_free_rate", event.target.value)} inputMode="decimal" /></label>
+          <label>Benchmark<select value={settings.benchmark} onChange={(event) => setField("benchmark", event.target.value)} aria-label="Benchmark"><option value="SPY">SPY</option></select></label>
         </div></Section>
       </div>
       <div className="builderFooter"><div><p>{basketMode === "random" ? `Random basket · ${basketSize} names` : `Custom basket · ${selectedTickers.length} names`}</p>{formError && <p className="formError">{formError}</p>}</div><button className="runButton" type="button" onClick={submit}>Run backtest</button></div>
