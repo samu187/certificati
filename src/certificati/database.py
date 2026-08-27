@@ -1,10 +1,11 @@
 """Create and populate the local Russell 3000 price database."""
 
 import csv
+from collections.abc import Callable
+from importlib import resources
 import math
 from pathlib import Path
 import sqlite3
-
 import yfinance as yf
 
 
@@ -14,13 +15,23 @@ END_DATE = "2026-08-01"
 MINIMUM_DOWNLOAD_COVERAGE = 0.95
 
 
-def check_database(data_dir: Path) -> Path:
+class DatabaseDownloadDeclined(Exception):
+    """Raised when the user declines the initial historical-price download."""
+
+
+def check_database(
+    data_dir: Path,
+    confirm_download: Callable[[int], bool] | None = None,
+) -> Path:
     """Create the price database on the first application startup only."""
     database_path = data_dir / "russell_prices.sqlite"
     if database_path.exists():
         return database_path
 
-    tickers = read_tickers(data_dir / "russell_tickers.csv")
+    tickers = read_packaged_tickers()
+    if confirm_download is not None and not confirm_download(len(tickers)):
+        raise DatabaseDownloadDeclined("Historical-price download cancelled.")
+
     temporary_path = database_path.with_suffix(".sqlite.tmp")
     temporary_path.unlink(missing_ok=True)
 
@@ -34,8 +45,10 @@ def check_database(data_dir: Path) -> Path:
     return database_path
 
 
-def read_tickers(csv_path: Path) -> list[str]:
-    with csv_path.open(newline="") as file:
+def read_packaged_tickers() -> list[str]:
+    """Read the ticker list shipped as a read-only package resource."""
+    ticker_resource = resources.files("certificati").joinpath("russell_tickers.csv")
+    with ticker_resource.open(newline="") as file:
         return [row["ticker"].strip() for row in csv.DictReader(file) if row["ticker"].strip()]
 
 

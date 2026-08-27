@@ -8,10 +8,6 @@ import sqlite3
 from dateutil.relativedelta import relativedelta
 
 
-PROJECT_DIR = Path(__file__).resolve().parents[2]
-DEFAULT_DATABASE_PATH = PROJECT_DIR / "data" / "russell_prices.sqlite"
-
-
 def run_backtest(
     *,
     start_date: str | dt.date,
@@ -32,7 +28,7 @@ def run_backtest(
     risk_free_rate: float = 0.05,
     tickers: list[str] | None = None,
     random_basket_size: int = 3,
-    database_path: Path = DEFAULT_DATABASE_PATH,
+    database_path: Path,
     seed: int | None = None,
 ) -> dict:
     """Run one certificate portfolio backtest and return JSON-ready results.

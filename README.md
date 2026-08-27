@@ -32,8 +32,14 @@ uv run certificati
 
 The app runs at `http://127.0.0.1:8044` and opens in the default browser automatically.
 
-On its first run, the app creates `data/russell_prices.sqlite`. It loads the
-tickers from `data/russell_tickers.csv`, makes one yfinance download call for
+`uv run certificati web` explicitly launches the same web application.
+`uv run certificati mcp` and `uv run certificati backtest` are placeholders for
+future interfaces.
+
+On its first command, Certificati asks before creating `russell_prices.sqlite` in the
+current user's application-data directory: `~/Library/Application Support/Certificati`
+on macOS and `%LOCALAPPDATA%\\Certificati` on Windows. It loads the ticker list
+packaged with the application, makes one yfinance download call for
 daily OHLCV prices from Yahoo Finance for 1 January 2016 through 31 July 2026,
 and records each ticker's first and last available price dates. yfinance sends
 the underlying Yahoo requests serially to avoid a rate-limit burst. Later starts
@@ -43,13 +49,11 @@ reuse the populated database.
 
 ```text
 src/certificati/
-  main.py                 FastAPI app entry point
+  main.py                 Typer command-line entry point
+  web.py                  FastAPI web application
   database.py             First-run SQLite database setup and price download
+  russell_tickers.csv     Packaged ticker-list resource
   static/                 Built frontend served by FastAPI
-
-data/
-  russell_tickers.csv     Russell ticker list (source input)
-  russell_prices.sqlite   Generated price database
 
 frontend/
   src/                    React source
