@@ -156,8 +156,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .iconButton { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid rgba(75, 36, 21, 0.13); border-radius: 50%; background: rgba(255, 255, 255, 0.54); color: #583a27; cursor: pointer; }
 .builderContent { overflow-y: auto; }
 .builderSection { padding: 22px 26px; border-bottom: 1px solid rgba(75, 36, 21, 0.1); }
-.sectionHeading { display: flex; align-items: center; gap: 9px; }
-.sectionHeading > span { display: grid; width: 21px; height: 21px; place-items: center; border-radius: 50%; background: #e7f0eb; color: #287062; font-size: 11px; font-weight: 900; }
+.sectionHeading { display: flex; align-items: center; }
 .sectionHeading h2 { font-size: 16px; }
 .fieldHint { margin: 8px 0 15px; color: #657168; font-size: 12px; line-height: 1.45; }
 .maturityInputs { display: flex; align-items: end; gap: 9px; }
@@ -207,10 +206,9 @@ button { -webkit-tap-highlight-color: transparent; }
 .resultHeading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
 .resultHeading h2 { font-size: clamp(28px, 4vw, 42px); }
 .resultHeading p:not(.eyebrow) { margin: 7px 0 0; color: #647168; font-size: 13px; }
-.marketSeriesPicker { min-width: 218px; margin: 0; padding: 12px 14px; border: 1px solid rgba(75, 36, 21, .12); border-radius: 13px; background: rgba(255, 255, 255, .44); }
+.marketSeriesPicker { min-width: 114px; margin: 0; padding: 9px 11px; border: 1px solid rgba(75, 36, 21, .12); border-radius: 11px; background: rgba(255, 255, 255, .44); }
 .marketSeriesPicker legend { padding: 0; color: #3f4d44; font-size: 11px; font-weight: 850; }
-.marketSeriesPicker p { margin: 3px 0 9px; color: #778077; font-size: 10px; line-height: 1.35; }
-.marketSeriesPicker > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.marketSeriesPicker > div { display: flex; flex-wrap: wrap; gap: 5px 8px; margin-top: 4px; }
 .marketSeriesPicker label { display: inline-flex; align-items: center; gap: 5px; color: #536058; font-size: 11px; font-weight: 800; cursor: pointer; }
 .marketSeriesPicker input { width: 14px; height: 14px; margin: 0; accent-color: #287062; }
 .resultChart { width: 100%; height: min(62vh, 620px); min-height: 430px; padding: 10px 0 6px; }

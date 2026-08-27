@@ -78,7 +78,7 @@ function MarketSeriesPicker({ marketPrices, selectedSeries, onChange }) {
   const tickers = Object.keys(marketPrices);
   if (!tickers.length) return null;
 
-  return <fieldset className="marketSeriesPicker"><legend>Show price performance</legend><p>Indexed to 100 at the backtest start.</p><div>{tickers.map((ticker) => <label key={ticker}><input type="checkbox" checked={selectedSeries.includes(ticker)} onChange={() => onChange(ticker)} /> <span>{ticker}</span></label>)}</div></fieldset>;
+  return <fieldset className="marketSeriesPicker"><legend>Prices</legend><div>{tickers.map((ticker) => <label key={ticker}><input type="checkbox" checked={selectedSeries.includes(ticker)} onChange={() => onChange(ticker)} /> <span>{ticker}</span></label>)}</div></fieldset>;
 }
 
 function ClosedTradesTable({ trades }) {
@@ -120,10 +120,10 @@ function ClosedTradesTable({ trades }) {
 }
 
 export function ResultSurface({ isRunning, result, error }) {
-  const [selectedMarketSeries, setSelectedMarketSeries] = useState(["SPY"]);
+  const [selectedMarketSeries, setSelectedMarketSeries] = useState([]);
 
   useEffect(() => {
-    setSelectedMarketSeries(Object.keys(result?.market_prices ?? {}).includes("SPY") ? ["SPY"] : []);
+    setSelectedMarketSeries([]);
   }, [result]);
 
   function toggleMarketSeries(ticker) {

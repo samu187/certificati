@@ -57,7 +57,7 @@ class BacktestRequest(BaseModel):
 def search_tickers(query: str = "", limit: int = 20):
     """Return ticker symbols for the custom-basket picker."""
     limit = max(1, min(limit, 100))
-    pattern = f"%{query.strip().upper()}%"
+    pattern = f"{query.strip().upper()}%"
 
     with sqlite3.connect(DATABASE_PATH) as database:
         rows = database.execute(

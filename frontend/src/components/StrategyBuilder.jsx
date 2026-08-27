@@ -5,9 +5,9 @@ const initialSettings = {
   max_maturity_months: "12",
   barrier: "60",
   airbag: true,
-  autocall: true,
+  autocall: false,
   annual_coupon: "20",
-  coupon_trigger: true,
+  coupon_trigger: false,
   coupon_trigger_level: "75",
   autocall_level_one: "90",
   autocall_step_down: "5",
@@ -23,8 +23,8 @@ function CloseIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>;
 }
 
-function Section({ number, title, children }) {
-  return <section className="builderSection"><div className="sectionHeading"><span>{number}</span><h2>{title}</h2></div>{children}</section>;
+function Section({ title, children }) {
+  return <section className="builderSection"><div className="sectionHeading"><h2>{title}</h2></div>{children}</section>;
 }
 
 export function StrategyBuilder({ isOpen, onClose, onRun }) {
@@ -40,9 +40,7 @@ export function StrategyBuilder({ isOpen, onClose, onRun }) {
 
   const minimum = Number(settings.min_maturity_months);
   const maximum = Number(settings.max_maturity_months);
-  const maturityMonths = Number.isFinite(minimum) && Number.isFinite(maximum) && maximum >= minimum
-    ? Array.from({ length: Math.min(maximum - minimum + 1, 24) }, (_, index) => minimum + index)
-    : [];
+  const hasValidMaturityRange = Number.isFinite(minimum) && Number.isFinite(maximum) && maximum >= minimum;
 
   useEffect(() => {
     if (basketMode !== "custom" || !tickerQuery.trim()) {
@@ -89,7 +87,7 @@ export function StrategyBuilder({ isOpen, onClose, onRun }) {
       setFormError("Choose at least one ticker from the search results.");
       return;
     }
-    if (!maturityMonths.length) {
+    if (!hasValidMaturityRange) {
       setFormError("Choose a valid maturity range.");
       return;
     }
@@ -117,16 +115,15 @@ export function StrategyBuilder({ isOpen, onClose, onRun }) {
     <aside className={`strategyBuilder ${isOpen ? "isOpen" : ""}`} aria-hidden={!isOpen}>
       <div className="builderTopbar"><div><p className="eyebrow">Strategy builder</p><h2>Set up a backtest</h2></div><button className="iconButton" type="button" onClick={onClose} aria-label="Close strategy builder"><CloseIcon /></button></div>
       <div className="builderContent">
-        <Section number="1" title="Maturity ladder">
+        <Section title="Maturity ladder">
           <p className="fieldHint">New trades use the least represented original term in this monthly range.</p>
           <div className="maturityInputs">
             <label>From<div className="inputWithUnit"><input value={settings.min_maturity_months} onChange={(event) => setField("min_maturity_months", event.target.value)} inputMode="numeric" /><span>months</span></div></label>
             <span className="inputDivider">to</span>
             <label>To<div className="inputWithUnit"><input value={settings.max_maturity_months} onChange={(event) => setField("max_maturity_months", event.target.value)} inputMode="numeric" /><span>months</span></div></label>
           </div>
-          <div className="termChips" aria-label="Maturity buckets">{maturityMonths.map((month) => <span key={month}>{month} mo</span>)}</div>
         </Section>
-        <Section number="2" title="Basket">
+        <Section title="Basket">
           <div className="modeSwitch" role="group" aria-label="Basket mode"><button type="button" className={basketMode === "random" ? "selected" : ""} onClick={() => setBasketMode("random")}>Random</button><button type="button" className={basketMode === "custom" ? "selected" : ""} onClick={() => setBasketMode("custom")}>Custom</button></div>
           {basketMode === "random" ? <div className="basketSizePicker"><span>Underlyings per certificate</span><div>{[1, 2, 3, 4, 5].map((size) => <button key={size} className={basketSize === size ? "selected" : ""} type="button" onClick={() => setBasketSize(size)}>{size}</button>)}</div></div> : (
             <div className="tickerPicker">
@@ -142,18 +139,16 @@ export function StrategyBuilder({ isOpen, onClose, onRun }) {
             </div>
           )}
         </Section>
-        <Section number="3" title="Certificate terms"><div className="fieldGrid">
+        <Section title="Certificate terms"><div className="fieldGrid">
           <label>Barrier (%)<input value={settings.barrier} onChange={(event) => setField("barrier", event.target.value)} inputMode="decimal" /></label>
           <label>Airbag<select value={String(settings.airbag)} onChange={(event) => setField("airbag", event.target.value === "true")}><option value="true">Yes</option><option value="false">No</option></select></label>
           <label>Coupon (% p.a.)<input value={settings.annual_coupon} onChange={(event) => setField("annual_coupon", event.target.value)} inputMode="decimal" /></label>
           <label>Coupon trigger<select value={String(settings.coupon_trigger)} onChange={(event) => setField("coupon_trigger", event.target.value === "true")}><option value="true">Yes</option><option value="false">No</option></select></label>
-          <label>Coupon trigger level (%)<input value={settings.coupon_trigger_level} onChange={(event) => setField("coupon_trigger_level", event.target.value)} inputMode="decimal" /></label>
+          {settings.coupon_trigger && <label>Coupon trigger level (%)<input value={settings.coupon_trigger_level} onChange={(event) => setField("coupon_trigger_level", event.target.value)} inputMode="decimal" /></label>}
           <label>Autocall<select value={String(settings.autocall)} onChange={(event) => setField("autocall", event.target.value === "true")}><option value="true">Yes</option><option value="false">No</option></select></label>
-          <label>Autocall first level (%)<input value={settings.autocall_level_one} onChange={(event) => setField("autocall_level_one", event.target.value)} inputMode="decimal" /></label>
-          <label>Autocall step-down (%)<input value={settings.autocall_step_down} onChange={(event) => setField("autocall_step_down", event.target.value)} inputMode="decimal" /></label>
-          <label>Autocall floor (%)<input value={settings.autocall_floor} onChange={(event) => setField("autocall_floor", event.target.value)} inputMode="decimal" /></label>
+          {settings.autocall && <><label>Autocall first level (%)<input value={settings.autocall_level_one} onChange={(event) => setField("autocall_level_one", event.target.value)} inputMode="decimal" /></label><label>Autocall step-down (%)<input value={settings.autocall_step_down} onChange={(event) => setField("autocall_step_down", event.target.value)} inputMode="decimal" /></label><label>Autocall floor (%)<input value={settings.autocall_floor} onChange={(event) => setField("autocall_floor", event.target.value)} inputMode="decimal" /></label></>}
         </div></Section>
-        <Section number="4" title="Backtest settings"><div className="fieldGrid twoColumns">
+        <Section title="Backtest settings"><div className="fieldGrid twoColumns">
           <label>Start date<input type="date" value={settings.start_date} onChange={(event) => setField("start_date", event.target.value)} /></label>
           <label>End date<input type="date" value={settings.end_date} onChange={(event) => setField("end_date", event.target.value)} /></label>
           <label>Target open trades<input value={settings.target_open_trades} onChange={(event) => setField("target_open_trades", event.target.value)} inputMode="numeric" /></label>
