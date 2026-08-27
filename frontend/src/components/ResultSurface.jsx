@@ -211,6 +211,66 @@ function ClosedTradesTable({ trades, selectedTradeIndex, onSelectTrade }) {
   );
 }
 
+function EmptyResultsPreview({ onOpenBuilder }) {
+  return (
+    <section className="emptyWorkspace" aria-labelledby="result-title">
+      <div className="emptyChartCard">
+        <div className="emptyChartHeading">
+          <div>
+            <p className="eyebrow">Portfolio equity</p>
+            <h2 id="result-title">Your backtest will take shape here.</h2>
+          </div>
+          <span className="emptyStatus"><i /> No data</span>
+        </div>
+
+        <div className="emptyChartPreview" aria-hidden="true">
+          <div className="emptyChartScale">
+            <span>$—</span>
+            <span>$—</span>
+            <span>$—</span>
+          </div>
+          <svg viewBox="0 0 760 230" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="emptyChartFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.13" />
+                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="emptyChartStroke" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.22" />
+                <stop offset="42%" stopColor="#3b82f6" stopOpacity="0.56" />
+                <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.2" />
+              </linearGradient>
+            </defs>
+            <path className="emptyChartGridLine" d="M0 28H760 M0 101H760 M0 174H760" />
+            <path className="emptyChartArea" d="M0 185 C60 178 98 163 142 168 S224 144 269 151 S352 104 402 119 S492 86 535 96 S622 52 673 68 S728 40 760 47 V230 H0Z" />
+            <path className="emptyChartLine" d="M0 185 C60 178 98 163 142 168 S224 144 269 151 S352 104 402 119 S492 86 535 96 S622 52 673 68 S728 40 760 47" />
+          </svg>
+          <div className="emptyChartMessage">
+            <span className="emptyChartMark">
+              <svg viewBox="0 0 24 24"><path d="M4 18V8m0 10h16M8 14l3-3 3 2 5-6" /></svg>
+            </span>
+            <strong>Awaiting a strategy</strong>
+            <small>Equity, benchmarks and drawdown will appear after your first run.</small>
+          </div>
+          <div className="emptyChartDates"><span>Start date</span><span>End date</span></div>
+        </div>
+      </div>
+
+      <button className="launchBacktestCard" type="button" onClick={onOpenBuilder}>
+        <span className="launchBacktestIcon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M5 19V9m7 10V5m7 14v-7M3 19h18" /></svg>
+        </span>
+        <span className="launchBacktestCopy">
+          <span className="eyebrow">Strategy builder</span>
+          <strong>Create a backtest</strong>
+          <small>Set the terms, choose the basket, and see how the strategy would have performed.</small>
+        </span>
+        <span className="launchBacktestAction" aria-hidden="true">Open builder <i>→</i></span>
+      </button>
+    </section>
+  );
+}
+
 export function ResultSurface({ isRunning, result, error, onOpenBuilder }) {
   const [selectedMarketSeries, setSelectedMarketSeries] = useState([]);
   const [marketView, setMarketView] = useState("price");
@@ -245,5 +305,5 @@ export function ResultSurface({ isRunning, result, error, onOpenBuilder }) {
   if (isRunning) return <section className="resultSurface loadingSurface" aria-live="polite"><div className="loadingMark"><span /><span /><span /></div><p className="eyebrow">Backtest in progress</p><h2>Building your portfolio history</h2><p>Calculating certificate events, redemptions, and daily equity.</p><div className="loadingSkeletons" aria-hidden="true"><span /><span /><span /></div></section>;
   if (error) return <section className="resultSurface emptyResult"><p className="eyebrow">Backtest unavailable</p><h2>Something needs attention.</h2><p>{error}</p></section>;
   if (result) { const selectedTrade = selectedTradeIndex === null ? null : result.closed_trades[selectedTradeIndex]; return <section className="resultData">{selectedTrade ? <TradeDetail trade={selectedTrade} tradeIndex={selectedTradeIndex} marketPrices={result.market_prices ?? {}} marketView={marketView} barrier={result.config.barrier} selectedSeries={selectedTradeSeries} onBack={() => setSelectedTradeIndex(null)} onMarketViewChange={setMarketView} onToggleSeries={toggleTradeSeries} /> : <><MetricsPanel metrics={result.metrics} /><div className="resultCard chartCard"><div className="resultHeading"><div><p className="eyebrow">Backtest results</p><h2>Portfolio equity</h2><p>{result.config.start_date} – {result.config.end_date} · {result.closed_trades.length} closed trades</p></div><MarketSeriesPicker marketPrices={result.market_prices ?? {}} selectedSeries={selectedMarketSeries} marketView={marketView} onChange={toggleMarketSeries} onMarketViewChange={setMarketView} /></div><EquityChart equity={result.equity} marketPrices={result.market_prices ?? {}} selectedMarketSeries={selectedMarketSeries} marketView={marketView} maxMaturityMonths={result.config.max_maturity_months} barrier={result.config.barrier} /></div></>}<ClosedTradesTable trades={result.closed_trades} selectedTradeIndex={selectedTradeIndex} onSelectTrade={selectTrade} /></section>; }
-  return <section className="resultSurface emptyResult emptyLanding" aria-labelledby="result-title"><div className="emptyLandingCopy"><p className="eyebrow">Run a backtest</p><h2 id="result-title">Nothing to show yet.</h2><p>Open Strategy builder to create a backtest.</p><button className="openBuilderButton" type="button" onClick={onOpenBuilder}>Open Strategy builder</button></div></section>;
+  return <EmptyResultsPreview onOpenBuilder={onOpenBuilder} />;
 }
