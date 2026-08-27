@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { StrategyBuilder } from "./components/StrategyBuilder.jsx";
 import { ResultSurface } from "./components/ResultSurface.jsx";
 
@@ -11,6 +11,7 @@ function SlidersIcon() {
 }
 
 export function App() {
+  const shellRef = useRef(null);
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState(null);
@@ -38,8 +39,15 @@ export function App() {
     }
   }
 
+  function updateBackground(event) {
+    const shell = shellRef.current;
+    if (!shell) return;
+    shell.style.setProperty("--pointer-x", `${(event.clientX / window.innerWidth) * 100}%`);
+    shell.style.setProperty("--pointer-y", `${(event.clientY / window.innerHeight) * 100}%`);
+  }
+
   return (
-    <main className="appShell">
+    <main className="appShell" ref={shellRef} onPointerMove={updateBackground}>
       <header className="appHeader">
         <div>
           <p className="eyebrow">Structured products</p>
@@ -51,18 +59,17 @@ export function App() {
       <ResultSurface isRunning={isRunning} result={result} error={error} />
 
       <button
-        className={`builderToggle ${isBuilderOpen ? "isHidden" : ""}`}
+        className="builderToggle"
         type="button"
-        aria-label="Open strategy builder"
+        aria-label={isBuilderOpen ? "Close strategy builder" : "Open strategy builder"}
         aria-expanded={isBuilderOpen}
-        onClick={() => setIsBuilderOpen(true)}
+        onClick={() => setIsBuilderOpen((open) => !open)}
       >
         <SlidersIcon />
       </button>
 
       <StrategyBuilder
         isOpen={isBuilderOpen}
-        onClose={() => setIsBuilderOpen(false)}
         onRun={runBacktest}
       />
     </main>

@@ -37,20 +37,20 @@ function EmptyChartIcon() {
     <svg className="emptyChartIcon" viewBox="0 0 160 96" aria-hidden="true">
       <defs>
         <linearGradient id="chart-fill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#62a894" stopOpacity="0.28" />
-          <stop offset="1" stopColor="#62a894" stopOpacity="0" />
+          <stop offset="0" stopColor="#2563eb" stopOpacity="0.24" />
+          <stop offset="1" stopColor="#2563eb" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path className="emptyChartGrid" d="M12 76H148M12 52H148M12 28H148" />
-      <path className="emptyChartArea" d="M12 77L34 64L55 69L78 43L98 53L121 24L148 12V77Z" />
-      <path className="emptyChartLine" d="M12 77L34 64L55 69L78 43L98 53L121 24L148 12" />
-      <circle cx="121" cy="24" r="4" />
-      <circle cx="148" cy="12" r="4" />
+      <path className="emptyChartGrid" d="M12 76H148M12 52H148M12 28H148M34 12V77M77 12V77M120 12V77" />
+      <path className="emptyChartArea" d="M12 77L32 62L52 66L70 43L93 51L118 23L148 15V77Z" />
+      <path className="emptyChartLine" d="M12 77L32 62L52 66L70 43L93 51L118 23L148 15" />
+      <circle cx="118" cy="23" r="3.5" />
+      <circle cx="148" cy="15" r="3.5" />
     </svg>
   );
 }
 
-const marketColours = ["#8b5e34", "#6f5aa5", "#bd6b48", "#286b91", "#9c5a78", "#477557"];
+const marketColours = ["#d97706", "#7c3aed", "#0f766e", "#be123c", "#65a30d", "#c2410c"];
 
 function EquityChart({ equity, marketPrices, selectedMarketSeries }) {
   const marketSeries = Object.fromEntries(
@@ -77,14 +77,14 @@ function EquityChart({ equity, marketPrices, selectedMarketSeries }) {
     <div className="resultChart">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 18, right: selectedMarketSeries.length ? 26 : 14, bottom: 4, left: 14 }}>
-          <CartesianGrid stroke="rgba(75, 36, 21, 0.12)" strokeDasharray="3 5" vertical={false} />
+          <CartesianGrid stroke="rgba(37, 99, 235, 0.14)" strokeDasharray="3 5" vertical={false} />
           <XAxis dataKey="date" minTickGap={70} tickLine={false} axisLine={false} />
           <YAxis yAxisId="equity" tickFormatter={chartValue} tickLine={false} axisLine={false} width={72} />
           {selectedMarketSeries.length > 0 && <YAxis yAxisId="market" orientation="right" tickFormatter={indexedValue} tickLine={false} axisLine={false} width={42} />}
-          <Tooltip formatter={(value, name) => [name.endsWith("(indexed)") ? indexedValue(value) : chartValue(value), name]} labelStyle={{ color: "#5d685f", fontWeight: 700 }} />
+          <Tooltip formatter={(value, name) => [name.endsWith("(indexed)") ? indexedValue(value) : chartValue(value), name]} labelStyle={{ color: "#334155", fontWeight: 700 }} />
           <Legend verticalAlign="top" align="right" iconType="plainline" />
-          <Line yAxisId="equity" type="monotone" dataKey="equity" name="Equity" stroke="#4b2415" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
-          <Line yAxisId="equity" type="monotone" dataKey="equityIncludingUnrealized" name="Equity incl. unrealized" stroke="#287062" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+          <Line yAxisId="equity" type="monotone" dataKey="equity" name="Equity" stroke="#2563eb" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+          <Line yAxisId="equity" type="monotone" dataKey="equityIncludingUnrealized" name="Equity incl. unrealized" stroke="#0f766e" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
           {selectedMarketSeries.map((ticker, index) => <Line key={ticker} yAxisId="market" type="monotone" dataKey={`market_${ticker}`} name={`${ticker} (indexed)`} stroke={marketColours[index % marketColours.length]} strokeWidth={2} strokeDasharray="6 4" dot={false} activeDot={{ r: 3 }} connectNulls />)}
         </LineChart>
       </ResponsiveContainer>
@@ -111,7 +111,7 @@ function ClosedTradesTable({ trades }) {
       <div className="tradesTableWrap">
         <table className="tradesTable">
           <thead>
-            <tr><th>Trade</th><th>Opened</th><th>Closed</th><th>Term</th><th>Basket</th><th>Reason</th><th>Coupon</th><th>Redemption</th><th>P&amp;L</th></tr>
+            <tr><th>Trade</th><th>Opened</th><th>Closed</th><th>Term</th><th>Basket</th><th>Reason</th><th>Coupon</th><th>Quantity</th><th>Redemption</th><th>P&amp;L</th></tr>
           </thead>
           <tbody>
             {trades.map((trade, index) => {
@@ -125,6 +125,7 @@ function ClosedTradesTable({ trades }) {
                   <td>{trade.underlyings.map((underlying) => underlying.name).join(", ")}</td>
                   <td>{trade.reason_for_redemption}</td>
                   <td>{money.format(tradeCouponTotal(trade))}</td>
+                  <td>{money.format(trade.quantity)}</td>
                   <td>{money.format(trade.redemption)}</td>
                   <td className={profit >= 0 ? "positivePnl" : "negativePnl"}>{money.format(profit)}</td>
                 </tr>

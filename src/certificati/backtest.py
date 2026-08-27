@@ -217,6 +217,7 @@ def run_backtest(
             equity.append(_equity_point(today, cash, open_trade_value, unrealized_value))
             today += dt.timedelta(days=1)
 
+        # Close all open trades at the end of the backtest period
         for trade in open_trades[:]:
             performance = worst_performance(trade, today)
             cash += pay_coupon(trade, today, performance)

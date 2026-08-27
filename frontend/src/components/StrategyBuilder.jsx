@@ -20,15 +20,11 @@ const initialSettings = {
   benchmark: "SPY",
 };
 
-function CloseIcon() {
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>;
-}
-
 function Section({ title, children }) {
   return <section className="builderSection"><div className="sectionHeading"><h2>{title}</h2></div>{children}</section>;
 }
 
-export function StrategyBuilder({ isOpen, onClose, onRun }) {
+export function StrategyBuilder({ isOpen, onRun }) {
   const [settings, setSettings] = useState(initialSettings);
   const [basketMode, setBasketMode] = useState("random");
   const [basketSize, setBasketSize] = useState(3);
@@ -122,7 +118,7 @@ export function StrategyBuilder({ isOpen, onClose, onRun }) {
 
   return (
     <aside className={`strategyBuilder ${isOpen ? "isOpen" : ""}`} aria-hidden={!isOpen}>
-      <div className="builderTopbar"><div><p className="eyebrow">Strategy builder</p><h2>Set up a backtest</h2></div><button className="iconButton" type="button" onClick={onClose} aria-label="Close strategy builder"><CloseIcon /></button></div>
+      <div className="builderTopbar"><h2>Strategy builder</h2></div>
       <div className="builderContent">
         <Section title="Maturity ladder">
           <p className="fieldHint">New trades use the least represented original term in this monthly range.</p>
