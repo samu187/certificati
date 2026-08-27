@@ -225,6 +225,9 @@ def run_backtest(
         equity.append(_equity_point(today, cash, 0, 0))
         market_prices = _market_prices(database, start, end, fixed_tickers)
 
+        # Calculate performance metrics
+        # metrics = calc_metrics(equity, closed_trades, initial_capital, risk_free_rate)
+
     return _serialise(
         {
             "config": {

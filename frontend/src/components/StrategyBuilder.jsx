@@ -8,10 +8,10 @@ const initialSettings = {
   autocall: false,
   annual_coupon: "20",
   coupon_trigger: false,
-  coupon_trigger_level: "75",
+  coupon_trigger_level: "70",
   autocall_level_one: "90",
   autocall_step_down: "5",
-  autocall_floor: "75",
+  autocall_floor: "70",
   start_date: "2016-01-04",
   end_date: "2026-07-31",
   target_open_trades: "60",
@@ -86,6 +86,15 @@ export function StrategyBuilder({ isOpen, onRun }) {
     setTickerError("");
   }
 
+  function addSuggestedTicker() {
+    const ticker = tickerMatches[0]?.ticker;
+    if (!ticker) return;
+    setSelectedTickers((current) => (current.includes(ticker) || current.length === 5 ? current : [...current, ticker]));
+    setTickerQuery("");
+    setTickerMatches([]);
+    setTickerError("");
+  }
+
   function submit() {
     if (basketMode === "custom" && !selectedTickers.length) {
       setFormError("Choose at least one ticker from the search results.");
@@ -132,7 +141,7 @@ export function StrategyBuilder({ isOpen, onRun }) {
           <div className="modeSwitch" role="group" aria-label="Basket mode"><button type="button" className={basketMode === "random" ? "selected" : ""} onClick={() => setBasketMode("random")}>Random</button><button type="button" className={basketMode === "custom" ? "selected" : ""} onClick={() => setBasketMode("custom")}>Custom</button></div>
           {basketMode === "random" ? <div className="basketSizePicker"><span>Underlyings per certificate</span><div>{[1, 2, 3, 4, 5].map((size) => <button key={size} className={basketSize === size ? "selected" : ""} type="button" onClick={() => setBasketSize(size)}>{size}</button>)}</div></div> : (
             <div className="tickerPicker">
-              <label>Search available tickers<input value={tickerQuery} onChange={(event) => setTickerQuery(event.target.value.toUpperCase())} placeholder="Start typing a ticker" autoComplete="off" /></label>
+              <label>Search available tickers<input value={tickerQuery} onChange={(event) => setTickerQuery(event.target.value.toUpperCase())} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addSuggestedTicker(); } }} placeholder="Start typing a ticker" autoComplete="off" /></label>
               <p className="fieldHint">Select one to five existing symbols. Typed text alone is never added to the basket.</p>
               {isSearching && <p className="tickerMessage">Searching tickers…</p>}
               {tickerError && <p className="tickerMessage error">{tickerError}</p>}

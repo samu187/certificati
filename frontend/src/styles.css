@@ -1,6 +1,6 @@
 :root {
   color: #172554;
-  background: #f7faff;
+  background: #eef0f3;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   font-synthesis: none;
@@ -16,14 +16,14 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background: #f7faff;
+  background: #eef0f3;
 }
 
 body::before {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: radial-gradient(circle at 8% 0%, rgba(96, 165, 250, 0.18), transparent 31%), radial-gradient(circle at 91% 16%, rgba(37, 99, 235, 0.11), transparent 29%), linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%);
+  background: radial-gradient(circle at 8% 0%, rgba(255, 255, 255, 0.96), transparent 35%), radial-gradient(circle at 93% 8%, rgba(148, 163, 184, 0.24), transparent 33%), linear-gradient(140deg, #f8f9fb 0%, #e6e9ee 100%);
   content: "";
   pointer-events: none;
 }
@@ -32,8 +32,8 @@ body::after {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background-image: linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
-  background-size: 40px 40px;
+  background-image: linear-gradient(rgba(100, 116, 139, 0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(100, 116, 139, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
   content: "";
   pointer-events: none;
 }
@@ -50,17 +50,8 @@ body::after {
   padding: 30px clamp(20px, 5vw, 72px) 48px;
 }
 
-.appShell::before {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  background: radial-gradient(circle 260px at var(--pointer-x, 78%) var(--pointer-y, 18%), rgba(250, 204, 21, 0.13), transparent 72%);
-  content: "";
-  pointer-events: none;
-  transition: background 180ms ease-out;
-}
-
 .appShell > * { position: relative; z-index: 1; }
+.appShell > .flockBackground { position: fixed; inset: 0; z-index: 0; display: block; pointer-events: none; }
 
 .appHeader {
   display: flex;
@@ -219,6 +210,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .resultHeading p:not(.eyebrow) { margin: 7px 0 0; color: #64748b; font-size: 13px; }
 .marketSeriesPicker { min-width: 114px; margin: 0; padding: 9px 11px; border: 1px solid #dbeafe; border-radius: 8px; background: #f8fbff; }
 .marketSeriesPicker legend { padding: 0; color: #334155; font-size: 11px; font-weight: 850; }
+.marketViewSelect { display: grid; gap: 3px; margin: 3px 0 8px; color: #64748b; font-size: 10px; font-weight: 800; }
+.marketViewSelect select { height: 27px; padding: 0 6px; border: 1px solid #cbd5e1; border-radius: 5px; background: #fff; color: #334155; font-size: 11px; font-weight: 700; }
 .marketSeriesPicker > div { display: flex; flex-wrap: wrap; gap: 5px 8px; margin-top: 4px; }
 .marketSeriesPicker label { display: inline-flex; align-items: center; gap: 5px; color: #475569; font-size: 11px; font-weight: 800; cursor: pointer; }
 .marketSeriesPicker input { width: 14px; height: 14px; margin: 0; accent-color: #2563eb; }
@@ -226,6 +219,17 @@ button { -webkit-tap-highlight-color: transparent; }
 .resultChart .recharts-text { fill: #64748b; font-size: 11px; }
 .resultChart .recharts-legend-item-text { color: #475569 !important; font-size: 12px; font-weight: 750; }
 .resultChart .recharts-default-tooltip { border: 1px solid #bfdbfe !important; border-radius: 8px; background: rgba(255, 255, 255, .98) !important; box-shadow: 0 12px 28px rgba(30, 64, 175, .12); }
+.tradeDetail { padding-bottom: 30px; }
+.tradeDetailControls { display: flex; align-items: end; gap: 10px; }
+.tradeDetailControls .marketViewSelect { margin: 0; min-width: 140px; text-align: left; }
+.tradeSeriesPicker { min-width: 112px; margin: 0; padding: 5px 8px 6px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; }
+.tradeSeriesPicker legend { padding: 0; color: #64748b; font-size: 10px; font-weight: 800; }
+.tradeSeriesPicker > div { display: flex; flex-wrap: wrap; gap: 4px 7px; margin-top: 2px; }
+.tradeSeriesPicker label { display: inline-flex; align-items: center; gap: 4px; color: #334155; font-size: 11px; font-weight: 750; cursor: pointer; }
+.tradeSeriesPicker input { width: 13px; height: 13px; margin: 0; accent-color: #2563eb; }
+.backToPortfolio { min-height: 34px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; color: #1e3a8a; cursor: pointer; font-size: 12px; font-weight: 800; }
+.tradeDetailChart { height: min(62vh, 620px); }
+.tradeDataNote { margin: 8px 0 0; color: #64748b; font-size: 11px; line-height: 1.4; }
 .tradesCard { margin-top: 28px; overflow: hidden; }
 .tradesHeading { display: flex; align-items: center; justify-content: space-between; padding: 19px 21px 17px; border-bottom: 1px solid #dbeafe; }
 .tradesHeading .eyebrow { margin-bottom: 5px; }
@@ -236,6 +240,9 @@ button { -webkit-tap-highlight-color: transparent; }
 .tradesTable th { position: sticky; top: 0; z-index: 1; background: #f8fbff; color: #64748b; font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
 .tradesTable td:nth-child(5) { max-width: 230px; overflow: hidden; text-overflow: ellipsis; }
 .tradesTable tbody tr:hover { background: #f0f6ff; }
+.tradesTable tbody tr.selected { background: #eff6ff; }
+.tradeSelectButton { min-width: 27px; height: 27px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: #1e3a8a; cursor: pointer; font-size: 11px; font-weight: 850; }
+.tradesTable tr.selected .tradeSelectButton { border-color: #2563eb; background: #2563eb; color: #fff; }
 .positivePnl { color: #15803d; font-weight: 850; }
 .negativePnl { color: #dc2626; font-weight: 850; }
 
@@ -251,6 +258,8 @@ button { -webkit-tap-highlight-color: transparent; }
   .fieldGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .builderToggle { top: 17px; left: 17px; }
   .resultHeading { align-items: start; flex-direction: column; }
+  .tradeDetailControls { align-items: end; width: 100%; justify-content: space-between; }
   .marketSeriesPicker { width: 100%; }
   .resultChart { height: 410px; min-height: 0; }
+  .tradeDetailChart { height: 410px; }
 }
