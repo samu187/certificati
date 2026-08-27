@@ -33,27 +33,41 @@ function tradeProfit(trade) {
   return tradeCouponTotal(trade) + trade.redemption - trade.quantity;
 }
 
-function EmptyChartIcon() {
-  return (
-    <svg className="emptyChartIcon" viewBox="0 0 160 96" aria-hidden="true">
-      <defs>
-        <linearGradient id="chart-fill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#2563eb" stopOpacity="0.24" />
-          <stop offset="1" stopColor="#2563eb" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path className="emptyChartGrid" d="M12 76H148M12 52H148M12 28H148M34 12V77M77 12V77M120 12V77" />
-      <path className="emptyChartArea" d="M12 77L32 62L52 66L70 43L93 51L118 23L148 15V77Z" />
-      <path className="emptyChartLine" d="M12 77L32 62L52 66L70 43L93 51L118 23L148 15" />
-      <circle cx="118" cy="23" r="3.5" />
-      <circle cx="148" cy="15" r="3.5" />
-    </svg>
-  );
+function percentage(value, { positiveSign = false } = {}) {
+  if (value === null || value === undefined) return "—";
+  const formatted = `${Math.abs(Number(value) * 100).toFixed(1)}%`;
+  if (value < 0) return `−${formatted}`;
+  return positiveSign && value > 0 ? `+${formatted}` : formatted;
+}
+
+function countRate(count, total) {
+  if (!total) return "—";
+  return `${count} / ${total}`;
+}
+
+function MetricsPanel({ metrics }) {
+  if (!metrics) return null;
+
+  const maturity = metrics.maturity_outcomes ?? {};
+  const naturalCount = metrics.natural_completed_trade_count ?? 0;
+  const historicalCapitalLoss = metrics.historical_annualised_capital_loss;
+  const cards = [
+    { label: "Equity annual growth", value: percentage(metrics.equity_cagr, { positiveSign: true }), tone: metrics.equity_cagr },
+    { label: "Coupon yield p.a.", value: percentage(metrics.realised_coupon_yield_annualised, { positiveSign: true }), tone: metrics.realised_coupon_yield_annualised },
+    { label: "Capital loss p.a.", value: percentage(historicalCapitalLoss == null ? null : -historicalCapitalLoss), tone: historicalCapitalLoss == null ? null : -historicalCapitalLoss },
+    { label: "Realised return p.a.", value: percentage(metrics.realised_total_return_annualised, { positiveSign: true }), tone: metrics.realised_total_return_annualised },
+    { label: "Autocalled", value: percentage(metrics.autocall_rate), detail: countRate(metrics.autocall_count ?? 0, naturalCount) },
+    { label: "At-par maturities", value: percentage(maturity.at_par_maturity_rate), detail: countRate(maturity.at_par_maturity_count ?? 0, maturity.maturity_count ?? 0) },
+    { label: "Below-par maturities", value: percentage((maturity.maturity_count ?? 0) ? 1 - (maturity.at_par_maturity_rate ?? 0) : null), detail: countRate(maturity.below_par_maturity_count ?? 0, maturity.maturity_count ?? 0) },
+    { label: "Average loss on loss", value: percentage(metrics.average_loss_given_loss), tone: metrics.average_loss_given_loss },
+  ];
+
+  return <section className="resultCard metricsPanel"><div className="metricsHeading"><div><p className="eyebrow">Realised metrics</p><h3>Performance and outcomes</h3></div><p>{naturalCount} natural trade outcomes · {metrics.end_backtest_close_count ?? 0} end-of-backtest closures excluded</p></div><div className="metricsGrid">{cards.map((card) => <div className="metric" key={card.label}><span>{card.label}</span><strong className={card.tone > 0 ? "positiveMetric" : card.tone < 0 ? "negativeMetric" : ""}>{card.value}</strong>{card.detail && <small>{card.detail}</small>}</div>)}</div></section>;
 }
 
 const marketColours = ["#d97706", "#7c3aed", "#0f766e", "#be123c", "#65a30d", "#c2410c"];
 
-function EquityChart({ equity, marketPrices, selectedMarketSeries, marketView, maxMaturityMonths }) {
+function EquityChart({ equity, marketPrices, selectedMarketSeries, marketView, maxMaturityMonths, barrier }) {
   const marketSeries = Object.fromEntries(
     selectedMarketSeries.map((ticker) => {
       const prices = marketPrices[ticker] ?? [];
@@ -99,6 +113,7 @@ function EquityChart({ equity, marketPrices, selectedMarketSeries, marketView, m
           <Legend verticalAlign="top" align="right" iconType="plainline" />
           <Line yAxisId="equity" type="monotone" dataKey="equity" name="Equity" stroke="#2563eb" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
           <Line yAxisId="equity" type="monotone" dataKey="equityIncludingUnrealized" name="Equity incl. unrealized" stroke="#0f766e" strokeWidth={1.6} dot={false} activeDot={{ r: 4 }} />
+          {marketView === "drawdown" && selectedMarketSeries.length > 0 && <ReferenceLine yAxisId="market" y={barrier} stroke="#dc2626" strokeDasharray="5 4" label={{ value: `Barrier ${barrier}%`, fill: "#dc2626", fontSize: 11 }} ifOverflow="extendDomain" />}
           {selectedMarketSeries.map((ticker, index) => <Line key={ticker} yAxisId="market" type="monotone" dataKey={`market_${ticker}`} name={`${ticker} (${marketView === "drawdown" ? "drawdown" : "price"} index)`} stroke={marketColours[index % marketColours.length]} strokeWidth={1.35} strokeDasharray="6 4" dot={false} activeDot={{ r: 3 }} connectNulls />)}
         </LineChart>
       </ResponsiveContainer>
@@ -196,12 +211,11 @@ function ClosedTradesTable({ trades, selectedTradeIndex, onSelectTrade }) {
   );
 }
 
-export function ResultSurface({ isRunning, result, error }) {
+export function ResultSurface({ isRunning, result, error, onOpenBuilder }) {
   const [selectedMarketSeries, setSelectedMarketSeries] = useState([]);
   const [marketView, setMarketView] = useState("price");
   const [selectedTradeIndex, setSelectedTradeIndex] = useState(null);
   const [selectedTradeSeries, setSelectedTradeSeries] = useState([]);
-
   useEffect(() => {
     setSelectedMarketSeries([]);
     setSelectedTradeIndex(null);
@@ -230,6 +244,6 @@ export function ResultSurface({ isRunning, result, error }) {
 
   if (isRunning) return <section className="resultSurface loadingSurface" aria-live="polite"><div className="loadingMark"><span /><span /><span /></div><p className="eyebrow">Backtest in progress</p><h2>Building your portfolio history</h2><p>Calculating certificate events, redemptions, and daily equity.</p><div className="loadingSkeletons" aria-hidden="true"><span /><span /><span /></div></section>;
   if (error) return <section className="resultSurface emptyResult"><p className="eyebrow">Backtest unavailable</p><h2>Something needs attention.</h2><p>{error}</p></section>;
-  if (result) { const selectedTrade = selectedTradeIndex === null ? null : result.closed_trades[selectedTradeIndex]; return <section className="resultData">{selectedTrade ? <TradeDetail trade={selectedTrade} tradeIndex={selectedTradeIndex} marketPrices={result.market_prices ?? {}} marketView={marketView} barrier={result.config.barrier} selectedSeries={selectedTradeSeries} onBack={() => setSelectedTradeIndex(null)} onMarketViewChange={setMarketView} onToggleSeries={toggleTradeSeries} /> : <div className="resultCard chartCard"><div className="resultHeading"><div><p className="eyebrow">Backtest results</p><h2>Portfolio equity</h2><p>{result.config.start_date} – {result.config.end_date} · {result.closed_trades.length} closed trades</p></div><MarketSeriesPicker marketPrices={result.market_prices ?? {}} selectedSeries={selectedMarketSeries} marketView={marketView} onChange={toggleMarketSeries} onMarketViewChange={setMarketView} /></div><EquityChart equity={result.equity} marketPrices={result.market_prices ?? {}} selectedMarketSeries={selectedMarketSeries} marketView={marketView} maxMaturityMonths={result.config.max_maturity_months} /></div>}<ClosedTradesTable trades={result.closed_trades} selectedTradeIndex={selectedTradeIndex} onSelectTrade={selectTrade} /></section>; }
-  return <section className="resultSurface emptyResult" aria-labelledby="result-title"><div className="emptyChartFrame"><EmptyChartIcon /></div><p className="eyebrow">Ready when you are</p><h2 id="result-title">Your results will take shape here.</h2><p>Set up a strategy, then run a backtest to see portfolio equity, market comparisons, and completed certificates.</p></section>;
+  if (result) { const selectedTrade = selectedTradeIndex === null ? null : result.closed_trades[selectedTradeIndex]; return <section className="resultData">{selectedTrade ? <TradeDetail trade={selectedTrade} tradeIndex={selectedTradeIndex} marketPrices={result.market_prices ?? {}} marketView={marketView} barrier={result.config.barrier} selectedSeries={selectedTradeSeries} onBack={() => setSelectedTradeIndex(null)} onMarketViewChange={setMarketView} onToggleSeries={toggleTradeSeries} /> : <><MetricsPanel metrics={result.metrics} /><div className="resultCard chartCard"><div className="resultHeading"><div><p className="eyebrow">Backtest results</p><h2>Portfolio equity</h2><p>{result.config.start_date} – {result.config.end_date} · {result.closed_trades.length} closed trades</p></div><MarketSeriesPicker marketPrices={result.market_prices ?? {}} selectedSeries={selectedMarketSeries} marketView={marketView} onChange={toggleMarketSeries} onMarketViewChange={setMarketView} /></div><EquityChart equity={result.equity} marketPrices={result.market_prices ?? {}} selectedMarketSeries={selectedMarketSeries} marketView={marketView} maxMaturityMonths={result.config.max_maturity_months} barrier={result.config.barrier} /></div></>}<ClosedTradesTable trades={result.closed_trades} selectedTradeIndex={selectedTradeIndex} onSelectTrade={selectTrade} /></section>; }
+  return <section className="resultSurface emptyResult emptyLanding" aria-labelledby="result-title"><div className="emptyLandingCopy"><p className="eyebrow">Run a backtest</p><h2 id="result-title">Nothing to show yet.</h2><p>Open Strategy builder to create a backtest.</p><button className="openBuilderButton" type="button" onClick={onOpenBuilder}>Open Strategy builder</button></div></section>;
 }

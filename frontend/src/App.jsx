@@ -34,20 +34,23 @@ function FlockBackground({ pointerRef }) {
         baseY: row * spacing - spacing / 2,
         x: column * spacing - spacing / 2,
         y: row * spacing - spacing / 2,
+        phase: Math.random() * Math.PI * 2,
       })));
     }
 
-    function animate() {
+    function animate(timestamp) {
       const { x: pointerX, y: pointerY } = pointerRef.current;
       context.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
       nodes.flat().forEach((node) => {
-        const deltaX = node.baseX - pointerX;
-        const deltaY = node.baseY - pointerY;
+        const driftingX = node.baseX + Math.sin(timestamp * 0.00011 + node.phase) * 5;
+        const driftingY = node.baseY + Math.cos(timestamp * 0.00009 + node.phase) * 4;
+        const deltaX = driftingX - pointerX;
+        const deltaY = driftingY - pointerY;
         const distance = Math.hypot(deltaX, deltaY);
-        const influence = distance < 250 ? ((250 - distance) / 250) ** 2 : 0;
-        const targetX = node.baseX + (distance ? (deltaX / distance) * influence * 35 : 0);
-        const targetY = node.baseY + (distance ? (deltaY / distance) * influence * 35 : 0);
+        const influence = distance < 280 ? ((280 - distance) / 280) ** 2 : 0;
+        const targetX = driftingX + (distance ? (deltaX / distance) * influence * 52 : 0);
+        const targetY = driftingY + (distance ? (deltaY / distance) * influence * 52 : 0);
         node.x += (targetX - node.x) * 0.08;
         node.y += (targetY - node.y) * 0.08;
       });
@@ -124,10 +127,9 @@ export function App() {
           <p className="eyebrow">Structured products</p>
           <h1>Certificati</h1>
         </div>
-        <p className="headerStatus">Local backtesting workspace</p>
       </header>
 
-      <ResultSurface isRunning={isRunning} result={result} error={error} />
+      <ResultSurface isRunning={isRunning} result={result} error={error} onOpenBuilder={() => setIsBuilderOpen(true)} />
 
       <button
         className="builderToggle"

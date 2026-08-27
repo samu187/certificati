@@ -68,7 +68,9 @@ def calc_metrics(
             total_coupons + capital_redemption_pnl, capital_years
         ),
         "autocall_rate": _ratio(len(autocall_trades), len(natural_trades)),
+        "autocall_count": len(autocall_trades),
         "loss_event_rate": _ratio(len(loss_trades), len(natural_trades)),
+        "loss_event_count": len(loss_trades),
         "average_loss_given_loss": _average(
             [float(trade["redemption"]) / float(trade["quantity"]) - 1 for trade in loss_trades]
         ),

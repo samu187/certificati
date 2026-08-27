@@ -34,6 +34,7 @@ body::after {
   z-index: 0;
   background-image: linear-gradient(rgba(100, 116, 139, 0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(100, 116, 139, 0.045) 1px, transparent 1px);
   background-size: 48px 48px;
+  animation: backgroundGridDrift 28s linear infinite alternate;
   content: "";
   pointer-events: none;
 }
@@ -60,6 +61,7 @@ body::after {
   gap: 20px;
   max-width: 1360px;
   margin: 0 auto 38px;
+  padding-left: clamp(28px, 4vw, 64px);
 }
 
 .eyebrow {
@@ -104,13 +106,12 @@ button { -webkit-tap-highlight-color: transparent; }
 .emptyResult { align-content: center; }
 .resultSurface h2 { max-width: 560px; font-size: clamp(29px, 4.5vw, 52px); line-height: 1; }
 .resultSurface > p:not(.eyebrow) { max-width: 470px; margin: 16px 0 0; color: #64748b; font-size: 16px; line-height: 1.55; }
-
-.emptyChartFrame { display: grid; width: min(100%, 480px); margin: 4px 0 31px; padding: 24px 22px 16px; border: 1px solid #d7e1ed; border-radius: 14px; background: linear-gradient(145deg, #fafcff, #f1f5fa); box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08), inset 0 1px #fff; }
-.emptyChartIcon { width: 100%; height: auto; overflow: visible; }
-.emptyChartGrid { fill: none; stroke: rgba(37, 99, 235, 0.14); stroke-dasharray: 3 5; }
-.emptyChartArea { fill: url(#chart-fill); }
-.emptyChartLine { fill: none; stroke: #2563eb; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
-.emptyChartIcon circle { fill: #fff; stroke: #2563eb; stroke-width: 3; }
+.emptyLanding { align-items: center; padding: clamp(28px, 5vw, 62px); }
+.emptyLandingCopy { text-align: center; }
+.emptyLandingCopy .eyebrow { margin-bottom: 8px; }
+.emptyLandingCopy p:not(.eyebrow) { margin: 11px 0 0; color: #64748b; font-size: 14px; font-weight: 650; }
+.openBuilderButton { margin-top: 24px; min-height: 42px; padding: 0 17px; border: 1px solid #1d4ed8; border-radius: 7px; background: #2563eb; color: #fff; box-shadow: 0 8px 18px rgba(37, 99, 235, .2); cursor: pointer; font-size: 13px; font-weight: 850; transition: transform 160ms ease, background 160ms ease; }
+.openBuilderButton:hover { background: #1d4ed8; transform: translateY(-1px); }
 
 .builderToggle {
   position: fixed;
@@ -215,6 +216,18 @@ button { -webkit-tap-highlight-color: transparent; }
 .marketSeriesPicker > div { display: flex; flex-wrap: wrap; gap: 5px 8px; margin-top: 4px; }
 .marketSeriesPicker label { display: inline-flex; align-items: center; gap: 5px; color: #475569; font-size: 11px; font-weight: 800; cursor: pointer; }
 .marketSeriesPicker input { width: 14px; height: 14px; margin: 0; accent-color: #2563eb; }
+.metricsPanel { margin: 0 0 28px; padding: 18px; background: linear-gradient(135deg, #f8fbff, #f1f6ff); }
+.metricsHeading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 15px; }
+.metricsHeading .eyebrow { margin-bottom: 5px; }
+.metricsHeading h3 { margin: 0; color: #0f172a; font-size: 16px; letter-spacing: -.02em; }
+.metricsHeading > p { margin: 0; color: #64748b; font-size: 11px; font-weight: 700; text-align: right; }
+.metricsGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+.metric { display: grid; gap: 4px; min-height: 78px; padding: 12px; border: 1px solid #dbe4f0; border-radius: 9px; background: rgba(255, 255, 255, .8); }
+.metric > span { color: #64748b; font-size: 10px; font-weight: 800; letter-spacing: .035em; text-transform: uppercase; }
+.metric strong { color: #172554; font-size: 19px; letter-spacing: -.035em; line-height: 1.05; }
+.metric small { color: #64748b; font-size: 11px; font-weight: 750; }
+.metric .positiveMetric { color: #15803d; }
+.metric .negativeMetric { color: #dc2626; }
 .resultChart { width: 100%; height: min(62vh, 620px); min-height: 430px; padding: 10px 0 6px; }
 .resultChart .recharts-text { fill: #64748b; font-size: 11px; }
 .resultChart .recharts-legend-item-text { color: #475569 !important; font-size: 12px; font-weight: 750; }
@@ -248,6 +261,7 @@ button { -webkit-tap-highlight-color: transparent; }
 
 @keyframes loadingPulse { 0%, 100% { opacity: .28; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
 @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@keyframes backgroundGridDrift { from { background-position: 0 0, 0 0; } to { background-position: 48px 28px, 48px 28px; } }
 
 @media (max-width: 700px) {
   .appShell { padding: 24px 17px 90px; }
@@ -260,6 +274,9 @@ button { -webkit-tap-highlight-color: transparent; }
   .resultHeading { align-items: start; flex-direction: column; }
   .tradeDetailControls { align-items: end; width: 100%; justify-content: space-between; }
   .marketSeriesPicker { width: 100%; }
+  .metricsHeading { align-items: start; flex-direction: column; }
+  .metricsHeading > p { text-align: left; }
+  .metricsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .resultChart { height: 410px; min-height: 0; }
   .tradeDetailChart { height: 410px; }
 }
