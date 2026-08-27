@@ -4,8 +4,9 @@ import datetime as dt
 from pathlib import Path
 import random
 import sqlite3
-
 from dateutil.relativedelta import relativedelta
+
+from certificati.metrics import calc_metrics
 
 
 def run_backtest(
@@ -217,6 +218,7 @@ def run_backtest(
             equity.append(_equity_point(today, cash, open_trade_value, unrealized_value))
             today += dt.timedelta(days=1)
 
+
         # Close all open trades at the end of the backtest period
         for trade in open_trades[:]:
             performance = worst_performance(trade, today)
@@ -226,7 +228,7 @@ def run_backtest(
         market_prices = _market_prices(database, start, end, fixed_tickers)
 
         # Calculate performance metrics
-        # metrics = calc_metrics(equity, closed_trades, initial_capital, risk_free_rate)
+        metrics = calc_metrics(equity, closed_trades, initial_capital, risk_free_rate)
 
     return _serialise(
         {
@@ -253,6 +255,7 @@ def run_backtest(
             "equity": equity,
             "closed_trades": closed_trades,
             "market_prices": market_prices,
+            "metrics": metrics,
         }
     )
 
