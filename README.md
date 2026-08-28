@@ -39,7 +39,7 @@ uv run cert
 The app runs at `http://127.0.0.1:8044` and opens in the default browser automatically.
 
 `uv run certificati web` (or `uv run cert web`) explicitly launches the same web application.
-`uv run certificati mcp` and `uv run certificati historical-scenarios` are
+`uv run certificati mcp` and `uv run certificati expected-loss` are
 placeholders for future interfaces. The backtest can be run directly from the
 terminal; all inputs are optional and use the strategy builder's defaults:
 
@@ -47,6 +47,10 @@ terminal; all inputs are optional and use the strategy builder's defaults:
 uv run cert backtest
 uv run cert backtest AAPL META NVDA --no-autocall --no-coupon-trigger --seed 1
 ```
+
+The terminal displays headline realised metrics. Every complete result is also
+saved as a timestamped JSON file in the application's `backtests` data folder,
+ready for later CLI inspection commands.
 
 On its first command, Certificati asks before creating `russell_prices.sqlite` in the
 current user's application-data directory: `~/Library/Application Support/Certificati`

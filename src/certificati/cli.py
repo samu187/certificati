@@ -1,12 +1,12 @@
 """Typer command-line entry point for Certificati."""
 
-import json
 from pathlib import Path
 import typer
 from platformdirs import user_data_path
 
 from certificati.backtest import run_backtest
 from certificati.database import DatabaseDownloadDeclined, check_database
+from certificati.results import save_backtest_result
 from certificati.web import run_web
 
 data_dir = Path(user_data_path("Certificati", appauthor=False))
@@ -64,7 +64,7 @@ def backtest(
     random_basket_size: int = typer.Option(3, min=1, max=5),
     seed: int | None = typer.Option(None, help="Optional random seed."),
 ) -> None:
-    """Run the certificate portfolio backtest and print its JSON result."""
+    """Run the certificate portfolio backtest and save its complete result."""
     _require_database()
     result = run_backtest(
         start_date=start_date,
@@ -88,7 +88,8 @@ def backtest(
         database_path=database_path,
         seed=seed,
     )
-    typer.echo(json.dumps(result['metrics'], indent=2))
+    result_path = save_backtest_result(result, data_dir)
+    _display_backtest_metrics(result, result_path)
 
 
 @app.command()
@@ -98,7 +99,90 @@ def expected_loss(
     ),
 ) -> None:
     """Placeholder for historical rolling worst-of and SPY scenarios."""
-    typer.echo("historical-scenarios is not yet developed")
+    typer.echo("expected-loss is not yet developed")
+
+
+
+def _display_backtest_metrics(result: dict, result_path: Path) -> None:
+    """Print the same headline realised metrics shown by the web interface."""
+    config = result["config"]
+    metrics = result["metrics"]
+    maturity = metrics["maturity_outcomes"]
+    natural_outcomes = metrics["natural_completed_trade_count"]
+    basket = ", ".join(config["tickers"]) if config["tickers"] else (
+        f"Random ({config['random_basket_size']} underlyings per certificate)"
+    )
+
+    typer.echo("\nBacktest complete")
+    typer.echo(f"Period:  {config['start_date']} to {config['end_date']}")
+    typer.echo(f"Basket:  {basket}")
+    typer.echo(f"Saved:   {result_path}")
+    typer.echo("\nRealised metrics")
+    typer.echo(f"{'Metric':<25} {'Value':>12}  Detail")
+    typer.echo(f"{'-' * 25} {'-' * 12}  {'-' * 28}")
+
+    rows = [
+        ("Equity annual growth", _percentage(metrics["equity_cagr"], sign=True), ""),
+        (
+            "Coupon yield p.a.",
+            _percentage(metrics["realised_coupon_yield_annualised"], sign=True),
+            "",
+        ),
+        (
+            "Capital loss p.a.",
+            _percentage(_negative_or_none(metrics["historical_annualised_capital_loss"])),
+            "",
+        ),
+        (
+            "Realised return p.a.",
+            _percentage(metrics["realised_total_return_annualised"], sign=True),
+            "",
+        ),
+        (
+            "Autocalled",
+            _percentage(metrics["autocall_rate"]),
+            _count_detail(metrics["autocall_count"], natural_outcomes),
+        ),
+        (
+            "At-par maturities",
+            _percentage(maturity["at_par_maturity_rate"]),
+            _count_detail(maturity["at_par_maturity_count"], maturity["maturity_count"]),
+        ),
+        (
+            "Below-par maturities",
+            _percentage(_below_par_rate(maturity)),
+            _count_detail(maturity["below_par_maturity_count"], maturity["maturity_count"]),
+        ),
+        ("Average loss on loss", _percentage(metrics["average_loss_given_loss"]), ""),
+    ]
+    for label, value, detail in rows:
+        typer.echo(f"{label:<25} {value:>12}  {detail}")
+
+    excluded = metrics["end_backtest_close_count"]
+    typer.echo(f"\n{natural_outcomes} natural trade outcomes; {excluded} end-of-backtest closures excluded.")
+
+
+def _percentage(value: float | None, *, sign: bool = False) -> str:
+    if value is None:
+        return "—"
+    prefix = "+" if sign and value > 0 else ""
+    return f"{prefix}{value:.1%}"
+
+
+def _negative_or_none(value: float | None) -> float | None:
+    if value is None:
+        return None
+    return 0.0 if value == 0 else -value
+
+
+def _below_par_rate(maturity: dict) -> float | None:
+    count = maturity["maturity_count"]
+    rate = maturity["at_par_maturity_rate"]
+    return None if not count or rate is None else 1 - rate
+
+
+def _count_detail(count: int, total: int) -> str:
+    return f"{count} / {total} natural outcomes" if total else "—"
 
 
 
