@@ -30,9 +30,15 @@ npm run build
 uv run certificati
 ```
 
+`cert` is an equivalent shorter command:
+
+```bash
+uv run cert
+```
+
 The app runs at `http://127.0.0.1:8044` and opens in the default browser automatically.
 
-`uv run certificati web` explicitly launches the same web application.
+`uv run certificati web` (or `uv run cert web`) explicitly launches the same web application.
 `uv run certificati mcp` and `uv run certificati backtest` are placeholders for
 future interfaces.
 
@@ -49,7 +55,7 @@ reuse the populated database.
 
 ```text
 src/certificati/
-  main.py                 Typer command-line entry point
+  cli.py                  Typer command-line entry point
   web.py                  FastAPI web application
   database.py             First-run SQLite database setup and price download
   russell_tickers.csv     Packaged ticker-list resource

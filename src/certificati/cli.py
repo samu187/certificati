@@ -1,5 +1,7 @@
-import typer
+"""Typer command-line entry point for Certificati."""
+
 from pathlib import Path
+import typer
 from platformdirs import user_data_path
 
 from certificati.database import DatabaseDownloadDeclined, check_database
@@ -7,6 +9,7 @@ from certificati.web import run_web
 
 data_dir = Path(user_data_path("Certificati", appauthor=False))
 database_path = data_dir / "russell_prices.sqlite"
+
 
 
 app = typer.Typer(
@@ -18,30 +21,29 @@ app = typer.Typer(
 @app.callback(invoke_without_command=True)
 def default_command(context: typer.Context) -> None:
     if context.invoked_subcommand is None:
-        # Launches web app if no command is supplied
+        _require_database()
         run_web(database_path)
 
 
 @app.command()
-def web(context: typer.Context) -> None:
-    # Launches local web app
+def web() -> None:
+    _require_database()
     run_web(database_path)
 
 
 @app.command()
 def mcp() -> None:
-    # Placeholder for MCP server
     typer.echo("mcp not yet developed")
 
 
 @app.command()
 def backtest() -> None:
-    # Placeholder for CLI backtesting command
+    _require_database()
     typer.echo("cli command not yet developed")
 
 
 
-def main() -> None:
+def _require_database() -> None:
     try:
         check_database(
             database_path,
@@ -52,6 +54,9 @@ def main() -> None:
     except DatabaseDownloadDeclined as error:
         typer.echo(str(error))
         raise typer.Exit() from error
+
+
+def main() -> None:
     app()
 
 

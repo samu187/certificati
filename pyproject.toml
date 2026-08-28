@@ -14,7 +14,8 @@ dependencies = [
 ]
 
 [project.scripts]
-certificati = "certificati.main:main"
+certificati = "certificati.cli:main"
+cert = "certificati.cli:main"
 
 [build-system]
 requires = ["hatchling"]
