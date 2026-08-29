@@ -1,11 +1,13 @@
 """Typer command-line entry point for Certificati."""
 
 from pathlib import Path
+import sqlite3
 import typer
 from platformdirs import user_data_path
 
 from certificati.backtest import run_backtest
 from certificati.database import DatabaseDownloadDeclined, check_database
+from certificati.expected_loss import MonthlyScenario, monthly_worst_of_scenarios
 from certificati.results import save_backtest_result
 from certificati.web import run_web
 
@@ -38,6 +40,24 @@ def web() -> None:
 def mcp() -> None:
     """MCP Server placeholder."""
     typer.echo("mcp not yet developed")
+
+
+@app.command()
+def query(
+    sql: str = typer.Argument(..., help='SQL to run, for example: "SELECT * FROM tickers LIMIT 5".'),
+) -> None:
+    """Run a SQL query against the local Russell prices database."""
+    _require_database()
+    try:
+        with sqlite3.connect(database_path) as database:
+            cursor = database.execute(sql)
+            if cursor.description is None:
+                typer.echo("Query executed.")
+                return
+            _display_query_result(cursor)
+    except sqlite3.Error as error:
+        typer.echo(f"SQL error: {error}", err=True)
+        raise typer.Exit(code=1) from error
 
 
 @app.command()
@@ -94,12 +114,63 @@ def backtest(
 
 @app.command()
 def expected_loss(
-    tickers: list[str] | None = typer.Argument(
-        None, help="Ticker basket to analyse, for example: AAPL META NVDA."
+    tickers: list[str] = typer.Argument(
+        ..., help="Exactly three tickers, for example: AAPL META NVDA."
     ),
+    barrier: int = typer.Option(
+        60, min=1, help="Capital-protection barrier as a percentage."
+    ),
+    airbag: bool = typer.Option(False, "--airbag/--no-airbag"),
 ) -> None:
-    """Placeholder for historical rolling worst-of and SPY scenarios."""
-    typer.echo("expected-loss is not yet developed")
+    """Compare all rolling 12-month worst-of scenarios against SPY."""
+    _require_database()
+    try:
+        scenarios = monthly_worst_of_scenarios(database_path, tickers, barrier, airbag)
+    except ValueError as error:
+        raise typer.BadParameter(str(error), param_hint="tickers") from error
+
+    labels = [ticker.strip().upper() for ticker in tickers]
+    typer.echo("\nRolling 12-month periods, sorted by SPY return")
+    typer.echo(
+        f"{'Start':<12} {'End':<12} {'SPY':>9} {labels[0]:>9} {labels[1]:>9} "
+        f"{labels[2]:>9} {'Worst':>9} {'Perf.':>8} {'Loss':>9}"
+    )
+    typer.echo("-" * 94)
+    for scenario in scenarios:
+        typer.echo(
+            f"{scenario.start_date:<12} {scenario.end_date:<12} "
+            f"{scenario.spy_return:>+8.1%} {scenario.ticker_1_return:>+8.1%} "
+            f"{scenario.ticker_2_return:>+8.1%} {scenario.ticker_3_return:>+8.1%} "
+            f"{scenario.worst_return:>+8.1%} {scenario.performance:>7.1f} "
+            f"{scenario.loss:>+8.1%}"
+        )
+    _display_expected_losses(scenarios)
+
+
+def _display_expected_losses(scenarios: list[MonthlyScenario]) -> None:
+    """Print mean loss across all scenarios and the requested SPY subsets."""
+    groups = [
+        ("All periods", scenarios),
+        (
+            "Bear (SPY < 0%)",
+            [scenario for scenario in scenarios if scenario.spy_return < 0],
+        ),
+        (
+            "Bull (SPY > 0%)",
+            [scenario for scenario in scenarios if scenario.spy_return > 0],
+        ),
+        (
+            "Neutral (-7.5% to +7.5%)",
+            [scenario for scenario in scenarios if -0.075 <= scenario.spy_return <= 0.075],
+        ),
+    ]
+    typer.echo("\nExpected loss")
+    typer.echo(f"{'Market':<24} {'Scenarios':>10} {'Average loss':>14}")
+    typer.echo("-" * 52)
+    for label, group in groups:
+        average_loss = sum(scenario.loss for scenario in group) / len(group) if group else None
+        value = f"{average_loss:.1%}" if average_loss is not None else "—"
+        typer.echo(f"{label:<24} {len(group):>10} {value:>14}")
 
 
 
@@ -183,6 +254,39 @@ def _below_par_rate(maturity: dict) -> float | None:
 
 def _count_detail(count: int, total: int) -> str:
     return f"{count} / {total} natural outcomes" if total else "—"
+
+
+def _display_query_result(cursor: sqlite3.Cursor) -> None:
+    """Print cursor rows in the same boxed style as SQLite's `.mode box`."""
+    headers = [column[0] for column in cursor.description]
+    rows = [["" if value is None else str(value) for value in row] for row in cursor]
+    widths = [len(header) for header in headers]
+    for row in rows:
+        for index, value in enumerate(row):
+            widths[index] = max(
+                widths[index],
+                max((len(line) for line in value.splitlines()), default=0),
+            )
+
+    def border(left: str, join: str, right: str) -> str:
+        return left + join.join("─" * (width + 2) for width in widths) + right
+
+    def display_row(values: list[str]) -> None:
+        lines_per_value = [value.splitlines() or [""] for value in values]
+        height = max(len(lines) for lines in lines_per_value)
+        for line_index in range(height):
+            cells = [
+                f" {lines[line_index] if line_index < len(lines) else '':<{width}} "
+                for lines, width in zip(lines_per_value, widths, strict=True)
+            ]
+            typer.echo("│" + "│".join(cells) + "│")
+
+    typer.echo(border("┌", "┬", "┐"))
+    display_row(headers)
+    typer.echo(border("├", "┼", "┤"))
+    for row in rows:
+        display_row(row)
+    typer.echo(border("└", "┴", "┘"))
 
 
 
