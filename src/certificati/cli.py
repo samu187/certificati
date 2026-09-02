@@ -19,6 +19,7 @@ database_path = data_dir / "russell_prices.sqlite"
 app = typer.Typer(
     no_args_is_help=False,
     help="Certificati local structured-products backtesting tools.",
+    add_completion=False,
 )
 
 
